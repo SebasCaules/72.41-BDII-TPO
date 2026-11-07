@@ -1,3 +1,7 @@
+from farmared.carga import carga_mongo, carga_redis, lector, validacion
+from farmared.errores import ValidacionError
+
+
 def validar(solo_provistos=False):
     """Valida los CSV sin escribir en ningún motor.
 
@@ -8,7 +12,7 @@ def validar(solo_provistos=False):
     Motor: ninguno (solo lee los CSV).
     Errores: ValidacionError si un valor no se puede convertir a su tipo.
     """
-    raise NotImplementedError
+    return validacion.errores(lector.leer_todo(solo_provistos))
 
 
 def cargar(solo_provistos=False):
@@ -21,4 +25,8 @@ def cargar(solo_provistos=False):
     Motor: MongoDB (colecciones e índices) y Redis (lotes y stock).
     Errores: ValidacionError con todos los errores si los datos no son válidos.
     """
-    raise NotImplementedError
+    errores = validar(solo_provistos)
+    if errores:
+        raise ValidacionError("DATO_INVALIDO", "\n".join(errores))
+    filas = lector.leer_todo(solo_provistos)
+    return {"mongo": carga_mongo.cargar_mongo(filas), "redis": carga_redis.cargar_redis(filas["stock_lotes"])}
