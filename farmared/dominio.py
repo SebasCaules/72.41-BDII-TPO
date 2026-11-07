@@ -1,0 +1,11 @@
+OBRAS_SOCIALES = {"OSDE", "Swiss Medical", "PAMI", "IOMA", "Galeno", "Sin cobertura"}
+TIPOS_SUCURSAL = {"Farmacia", "Droguería"}
+CARGOS = {"Director Técnico", "Farmacéutico"}
+TIPOS_PROVEEDOR = {"Laboratorio", "Droguería"}
+CONDICIONES_VENTA = {"Venta libre", "Bajo receta", "Bajo receta archivada"}
+TIPOS_RECETA = {"Simple", "Archivada", "Tratamiento prolongado"}
+ESTADOS_RECETA = {"Vigente", "Completada", "Vencida"}
+TIPOS_VENTA = {"Venta libre", "Con receta"}
+MEDIOS_DE_PAGO = {"Efectivo", "Débito", "Crédito", "Transferencia", "Obra social"}
+ESTADOS_VENTA = {"Completada", "Pendiente", "Anulada"}
+CONDICIONES_CON_RECETA = {"Bajo receta", "Bajo receta archivada"}
