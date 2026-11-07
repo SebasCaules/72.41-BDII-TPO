@@ -2,9 +2,22 @@ from collections import Counter, defaultdict
 
 from farmared import dominio
 
-CLAVES = {"clientes": "id_cliente", "sucursales": "id_sucursal", "farmaceuticos": "id_farmaceutico",
-          "proveedores": "id_proveedor", "productos": "id_producto", "stock_lotes": "id_lote",
-          "recetas": "id_receta", "ventas": "id_venta", "detalle_ventas": "id_detalle"}
+COLUMNAS = {
+    "clientes": ("id_cliente", "nombre", "apellido", "dni", "email", "telefono", "ciudad", "provincia", "obra_social",
+                 "nro_afiliado", "activo"),
+    "sucursales": ("id_sucursal", "nombre", "tipo", "direccion", "ciudad", "provincia", "telefono", "activo"),
+    "farmaceuticos": ("id_farmaceutico", "nombre", "apellido", "matricula", "cargo", "id_sucursal", "activo"),
+    "proveedores": ("id_proveedor", "razon_social", "cuit", "tipo", "ciudad", "provincia", "telefono", "activo"),
+    "productos": ("id_producto", "nombre", "principio_activo", "categoria", "presentacion", "condicion_venta",
+                  "precio_unit", "id_proveedor", "activo"),
+    "stock_lotes": ("id_lote", "id_producto", "id_sucursal", "nro_lote", "unidades", "vencimiento"),
+    "recetas": ("id_receta", "id_cliente", "medico", "matricula_medico", "fecha_emision", "tipo",
+                "dispensas_autorizadas", "dispensas_realizadas", "proxima_dispensa", "estado"),
+    "ventas": ("id_venta", "id_cliente", "id_farmaceutico", "id_receta", "fecha", "tipo", "medio_pago", "total",
+               "estado"),
+    "detalle_ventas": ("id_detalle", "id_venta", "id_producto", "cantidad", "precio_unit"),
+}
+CLAVES = {archivo: columnas[0] for archivo, columnas in COLUMNAS.items()}
 UNICAS = {"clientes": "dni", "farmaceuticos": "matricula", "proveedores": "cuit"}
 REFERENCIAS = {
     "farmaceuticos": {"id_sucursal": "sucursales"},
@@ -14,7 +27,7 @@ REFERENCIAS = {
     "ventas": {"id_cliente": "clientes", "id_farmaceutico": "farmaceuticos", "id_receta": "recetas"},
     "detalle_ventas": {"id_venta": "ventas", "id_producto": "productos"},
 }
-OPCIONALES = {"id_receta"}
+OPCIONALES = {"clientes": {"nro_afiliado"}, "ventas": {"id_receta"}, "recetas": {"proxima_dispensa"}}
 DOMINIOS = {
     "clientes": {"obra_social": dominio.OBRAS_SOCIALES},
     "sucursales": {"tipo": dominio.TIPOS_SUCURSAL},
@@ -67,19 +80,27 @@ class _Tablas:
 def _encabezado(t):
     for archivo, numeradas in t.todas.items():
         for n, fila in numeradas:
-            if list(fila) != list(numeradas[0][1]):
-                yield _error(archivo, n, fila, "encabezado", "columnas distintas de las de la primera fila")
+            if tuple(fila) != COLUMNAS[archivo]:
+                yield _error(archivo, n, fila, "encabezado", "columnas distintas de las esperadas")
+
+
+def _obligatorio(t):
+    for archivo, numeradas in t.todas.items():
+        opcionales = OPCIONALES.get(archivo, set())
+        for n, fila in numeradas:
+            for campo, valor in fila.items():
+                # Una columna que no es del archivo la informa [encabezado], como la que falta.
+                if valor is None and campo in COLUMNAS[archivo] and campo not in opcionales:
+                    yield _error(archivo, n, fila, "obligatorio", f"{campo} vacío")
 
 
 def _id_repetido(t):
     for archivo, numeradas in t.todas.items():
         clave, vistos = CLAVES[archivo], set()
         for n, fila in numeradas:
-            if clave not in fila:
+            if fila.get(clave) is None:
                 continue
-            if fila[clave] is None:
-                yield _error(archivo, n, fila, "id-repetido", "id vacío")
-            elif fila[clave] in vistos:
+            if fila[clave] in vistos:
                 yield _error(archivo, n, fila, "id-repetido", "id repetido")
             vistos.add(fila[clave])
 
@@ -88,13 +109,11 @@ def _clave_unica(t):
     for archivo, campo in UNICAS.items():
         vistos = set()
         for n, fila in t.todas[archivo]:
-            if campo not in fila:
+            valor = fila.get(campo)
+            if valor is None:
                 continue
-            valor = fila[campo]
-            # El índice único de MongoDB trata los nulos como iguales: dos vacíos también chocan.
             if valor in vistos:
-                detalle = f"{campo} vacío repetido" if valor is None else f"{campo} {valor} repetido"
-                yield _error(archivo, n, fila, "clave-unica", detalle)
+                yield _error(archivo, n, fila, "clave-unica", f"{campo} {valor} repetido")
             vistos.add(valor)
 
 
@@ -102,13 +121,8 @@ def _referencia(t):
     for archivo, campos in REFERENCIAS.items():
         for n, fila in t.todas[archivo]:
             for campo, destino in campos.items():
-                if campo not in fila:
-                    continue
-                valor = fila[campo]
-                if valor is None:
-                    if campo not in OPCIONALES:
-                        yield _error(archivo, n, fila, "referencia", f"{campo} vacío")
-                elif valor not in t.indice[destino]:
+                valor = fila.get(campo)
+                if valor is not None and valor not in t.indice[destino]:
                     yield _error(archivo, n, fila, "referencia", f"{campo} {valor} inexistente")
 
 
@@ -116,25 +130,26 @@ def _dominio(t):
     for archivo, campos in DOMINIOS.items():
         for n, fila in t.todas[archivo]:
             for campo, validos in campos.items():
-                if campo not in fila:
-                    continue
-                valor = fila[campo]
-                if valor is None:
-                    yield _error(archivo, n, fila, "dominio", f"{campo} vacío")
-                elif valor not in validos:
+                valor = fila.get(campo)
+                if valor is not None and valor not in validos:
                     yield _error(archivo, n, fila, "dominio", f"{campo} {valor} fuera de dominio")
+
+
+def _afiliado(t):
+    for n, c in t.todas["clientes"]:
+        if c.get("obra_social") not in dominio.OBRAS_SOCIALES or "nro_afiliado" not in c:
+            continue
+        if (c["obra_social"] == "Sin cobertura") != (c["nro_afiliado"] is None):
+            detalle = "sin nro_afiliado" if c["nro_afiliado"] is None else f"con nro_afiliado {c['nro_afiliado']}"
+            yield _error("clientes", n, c, "afiliado", f"{c['obra_social']} {detalle}")
 
 
 def _detalle_total(venta, items):
     """Devuelve qué informar sobre el total de la venta, o None si no hay nada que informar."""
     if not items:
         return "venta sin ítems"
-    if "total" not in venta or any("cantidad" not in d or "precio_unit" not in d for d in items):
+    if venta.get("total") is None or any(d.get("cantidad") is None or d.get("precio_unit") is None for d in items):
         return None
-    if venta["total"] is None:
-        return "total vacío"
-    if any(d["cantidad"] is None or d["precio_unit"] is None for d in items):
-        return "ítem con cantidad o precio vacío"
     suma = sum(d["cantidad"] * d["precio_unit"] for d in items)
     return None if venta["total"] == suma else f"{venta['total']} ≠ suma de ítems {suma}"
 
@@ -201,17 +216,14 @@ def _dispensas(t):
         estado = v.get("estado")
         if v.get("id_receta") is None:
             continue
-        # Con el estado inválido no se sabe si la venta cuenta; ya lo informó [dominio].
+        # Con el estado vacío o inválido no se sabe si la venta cuenta; ya lo informó [obligatorio] o [dominio].
         if estado not in dominio.ESTADOS_VENTA:
             inciertas.add(v["id_receta"])
         elif estado == "Completada":
             completadas[v["id_receta"]] += 1
     for n, r in t.primeras["recetas"]:
-        if "dispensas_realizadas" not in r:
-            continue
-        realizadas, autorizadas = r["dispensas_realizadas"], r.get("dispensas_autorizadas")
+        realizadas, autorizadas = r.get("dispensas_realizadas"), r.get("dispensas_autorizadas")
         if realizadas is None:
-            yield _error("recetas", n, r, "dispensas", "dispensas_realizadas vacío")
             continue
         id_ = r.get("id_receta")
         if id_ is not None and id_ not in inciertas and realizadas != completadas[id_]:
@@ -225,8 +237,8 @@ def _receta_coherente(t):
     for n, r in t.primeras["recetas"]:
         tipo, estado = r.get("tipo"), r.get("estado")
         autorizadas, realizadas = r.get("dispensas_autorizadas"), r.get("dispensas_realizadas")
-        if "dispensas_autorizadas" in r and tipo in MAX_DISPENSAS:
-            if autorizadas is None or not 1 <= autorizadas <= MAX_DISPENSAS[tipo]:
+        if autorizadas is not None and tipo in MAX_DISPENSAS:
+            if not 1 <= autorizadas <= MAX_DISPENSAS[tipo]:
                 yield _error("recetas", n, r, "receta-coherente", f"{tipo} con {autorizadas} dispensas autorizadas")
         if estado in dominio.ESTADOS_RECETA and autorizadas is not None and realizadas is not None:
             if (estado == "Completada") != (realizadas == autorizadas):
@@ -242,20 +254,15 @@ def _receta_coherente(t):
 
 def _receta_fecha(t):
     for n, v in t.primeras["ventas"]:
-        receta = t.indice["recetas"].get(v.get("id_receta"))
-        if receta is None or "fecha" not in v or "fecha_emision" not in receta:
-            continue
-        fecha, emision = v["fecha"], receta["fecha_emision"]
-        if fecha is None or emision is None:
-            detalle = "fecha vacía" if fecha is None else f"receta {v['id_receta']} sin fecha_emision"
-            yield _error("ventas", n, v, "receta-fecha", detalle)
-        elif fecha < emision:
+        receta = t.indice["recetas"].get(v.get("id_receta"), {})
+        fecha, emision = v.get("fecha"), receta.get("fecha_emision")
+        if fecha is not None and emision is not None and fecha < emision:
             yield _error("ventas", n, v, "receta-fecha",
                          f"{fecha:%Y-%m-%d} anterior a la receta {emision:%Y-%m-%d}")
 
 
-REGLAS = (_encabezado, _id_repetido, _clave_unica, _referencia, _dominio, _total, _tipo_venta, _receta_cliente,
-          _receta_requerida, _venta_en_farmacia, _dispensas, _receta_coherente, _receta_fecha)
+REGLAS = (_encabezado, _obligatorio, _id_repetido, _clave_unica, _referencia, _dominio, _afiliado, _total, _tipo_venta,
+          _receta_cliente, _receta_requerida, _venta_en_farmacia, _dispensas, _receta_coherente, _receta_fecha)
 
 
 def errores(filas):

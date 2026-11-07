@@ -9,8 +9,8 @@ import pytest
 from farmared.carga import lector
 from farmared.carga.validacion import CLAVES, errores
 
-ETIQUETAS = {"encabezado", "id-repetido", "clave-unica", "referencia", "dominio", "total", "tipo-venta",
-             "receta-cliente", "receta-requerida", "venta-en-farmacia", "dispensas", "receta-coherente",
+ETIQUETAS = {"encabezado", "obligatorio", "id-repetido", "clave-unica", "referencia", "dominio", "afiliado", "total",
+             "tipo-venta", "receta-cliente", "receta-requerida", "venta-en-farmacia", "dispensas", "receta-coherente",
              "receta-fecha"}
 FORMATO = re.compile(r"^(?:%s)\.csv (?:fila \d+|\S+): \[([a-z-]+)\] \S.*$" % "|".join(CLAVES))
 PROVISTOS = lector.DATOS / "provistos"
@@ -64,7 +64,93 @@ def test_encabezado_otro_orden(filas):
     f = fila(filas, "sucursales", "S002")
     f["nombre"] = f.pop("nombre")
     assert etiquetas(filas) == {"encabezado"}
-    assert errores(filas) == ["sucursales.csv S002: [encabezado] columnas distintas de las de la primera fila"]
+    assert errores(filas) == ["sucursales.csv S002: [encabezado] columnas distintas de las esperadas"]
+
+
+@pytest.mark.parametrize("archivo,id_,campo", [
+    ("clientes", "C002", "email"),
+    ("sucursales", "S002", "direccion"),
+    ("farmaceuticos", "F002", "nombre"),
+    ("proveedores", "PRV002", "razon_social"),
+    ("productos", "PRD002", "precio_unit"),
+    ("stock_lotes", "L002", "vencimiento"),
+    ("recetas", "RC003", "medico"),
+    ("ventas", "V004", "medio_pago"),
+    ("detalle_ventas", "D005", "cantidad"),
+])
+def test_obligatorio_columna_vacia(filas, archivo, id_, campo):
+    fila(filas, archivo, id_)[campo] = None
+    assert errores(filas) == [f"{archivo}.csv {id_}: [obligatorio] {campo} vacío"]
+
+
+# Filas que ninguna otra referencia, salvo donde no hay ninguna así: toda sucursal y todo proveedor tienen filas que
+# los referencian, y toda venta tiene ítems.
+FILA_POR_ARCHIVO = {"clientes": "C008", "sucursales": "S001", "farmaceuticos": "F007", "proveedores": "PRV005",
+                    "productos": "PRD013", "stock_lotes": "L001", "recetas": "RC009", "ventas": "V002",
+                    "detalle_ventas": "D002"}
+ENLACE_PERDIDO = {("sucursales", "id_sucursal"): "referencia", ("proveedores", "id_proveedor"): "referencia",
+                  ("ventas", "id_venta"): "referencia", ("detalle_ventas", "id_venta"): "total"}
+OPCIONALES = {("clientes", "nro_afiliado"), ("ventas", "id_receta"), ("recetas", "proxima_dispensa")}
+
+
+@pytest.mark.parametrize("archivo", CLAVES)
+def test_obligatorio_cada_columna_de_una_fila(originales, archivo):
+    id_ = FILA_POR_ARCHIVO[archivo]
+    columnas = [c for c in fila(originales, archivo, id_) if (archivo, c) not in OPCIONALES]
+    assert CLAVES[archivo] in columnas
+    for columna in columnas:
+        filas = copy.deepcopy(originales)
+        fila(filas, archivo, id_)[columna] = None
+        enlace = {ENLACE_PERDIDO[archivo, columna]} if (archivo, columna) in ENLACE_PERDIDO else set()
+        assert etiquetas(filas) == {"obligatorio"} | enlace, columna
+        assert sum("[obligatorio]" in e for e in errores(filas)) == 1, columna
+
+
+@pytest.mark.parametrize("archivo,id_,campo,esperadas", [
+    ("clientes", "C001", "nro_afiliado", {"afiliado"}),
+    ("ventas", "V011", "id_receta", {"tipo-venta", "receta-requerida"}),
+    ("ventas", "V001", "id_receta", {"tipo-venta", "receta-requerida", "dispensas"}),
+    ("recetas", "RC002", "proxima_dispensa", {"receta-coherente"}),
+])
+def test_obligatorio_no_alcanza_a_las_opcionales(filas, archivo, id_, campo, esperadas):
+    fila(filas, archivo, id_)[campo] = None
+    assert etiquetas(filas) == esperadas
+
+
+def test_obligatorio_opcionales_vacias_en_los_provistos(originales):
+    assert fila(originales, "clientes", "C005")["nro_afiliado"] is None
+    assert fila(originales, "ventas", "V002")["id_receta"] is None
+    assert fila(originales, "recetas", "RC001")["proxima_dispensa"] is None
+    assert errores(originales) == []
+
+
+def test_obligatorio_id_receta_es_opcional_solo_en_ventas(filas):
+    fila(filas, "recetas", "RC009")["id_receta"] = None
+    assert errores(filas) == ["recetas.csv fila 9: [obligatorio] id_receta vacío"]
+
+
+def test_obligatorio_no_informa_la_columna_ausente(filas):
+    del fila(filas, "stock_lotes", "L002")["vencimiento"]
+    assert etiquetas(filas) == {"encabezado"}
+
+
+@pytest.mark.parametrize("id_,cambios,detalle", [
+    ("C005", {"nro_afiliado": "SC-1"}, "Sin cobertura con nro_afiliado SC-1"),
+    ("C001", {"nro_afiliado": None}, "OSDE sin nro_afiliado"),
+    ("C001", {"obra_social": "Sin cobertura"}, "Sin cobertura con nro_afiliado OS-310045"),
+    ("C005", {"obra_social": "PAMI"}, "PAMI sin nro_afiliado"),
+])
+def test_afiliado(filas, id_, cambios, detalle):
+    fila(filas, "clientes", id_).update(cambios)
+    assert etiquetas(filas) == {"afiliado"}
+    assert errores(filas) == [f"clientes.csv {id_}: [afiliado] {detalle}"]
+
+
+@pytest.mark.parametrize("id_,obra_social,esperadas", [("C001", None, {"obligatorio"}), ("C005", None, {"obligatorio"}),
+                                                       ("C001", "Otra", {"dominio"}), ("C005", "Otra", {"dominio"})])
+def test_afiliado_calla_sin_obra_social_valida(filas, id_, obra_social, esperadas):
+    fila(filas, "clientes", id_)["obra_social"] = obra_social
+    assert etiquetas(filas) == esperadas
 
 
 @pytest.mark.parametrize("archivo", CLAVES)
@@ -112,9 +198,19 @@ def test_id_repetido_identico_tambien_repite_la_clave_unica(filas):
                               f"clientes.csv C003: [clave-unica] dni {cliente['dni']} repetido"]
 
 
+def test_id_repetido_con_columna_obligatoria_vacia_la_informa(filas):
+    filas["clientes"].append({**fila(filas, "clientes", "C001"), "dni": None})
+    assert etiquetas(filas) == {"id-repetido", "obligatorio"}
+
+
+def test_id_repetido_con_afiliado_incoherente_lo_informa(filas):
+    filas["clientes"].append({**fila(filas, "clientes", "C001"), "dni": "NUEVO", "obra_social": "Sin cobertura"})
+    assert etiquetas(filas) == {"id-repetido", "afiliado"}
+
+
 def test_id_repetido_con_columna_faltante_informa_el_encabezado(filas):
     filas["clientes"].append({k: v for k, v in fila(filas, "clientes", "C001").items() if k not in ("email", "dni")})
-    assert errores(filas) == ["clientes.csv C001: [encabezado] columnas distintas de las de la primera fila",
+    assert errores(filas) == ["clientes.csv C001: [encabezado] columnas distintas de las esperadas",
                               "clientes.csv C001: [id-repetido] id repetido"]
 
 
@@ -187,17 +283,18 @@ def test_id_repetido_la_incertidumbre_no_alcanza_a_otras_filas(filas):
 
 def test_id_vacio_aunque_sea_uno_solo(filas):
     fila(filas, "clientes", "C008")["id_cliente"] = None
-    assert errores(filas) == ["clientes.csv fila 8: [id-repetido] id vacío"]
+    assert errores(filas) == ["clientes.csv fila 8: [obligatorio] id_cliente vacío"]
 
 
 def test_id_vacio_en_detalle_no_altera_el_total(filas):
     fila(filas, "detalle_ventas", "D001")["id_detalle"] = None
-    assert etiquetas(filas) == {"id-repetido"}
+    assert etiquetas(filas) == {"obligatorio"}
 
 
 def test_id_vacio_en_venta_con_items_deja_su_detalle_sin_referencia_cascada_inherente(filas):
     fila(filas, "ventas", "V001")["id_venta"] = None
-    assert etiquetas(filas) == {"id-repetido", "referencia"}
+    assert errores(filas) == ["ventas.csv fila 1: [obligatorio] id_venta vacío",
+                              "detalle_ventas.csv D001: [referencia] id_venta V001 inexistente"]
 
 
 UNICAS = [("clientes", "C002", "dni", "31245678"), ("farmaceuticos", "F002", "matricula", "MN-18041"),
@@ -211,11 +308,10 @@ def test_clave_unica_valor_repetido(filas, archivo, id_, campo, repetido):
 
 
 @pytest.mark.parametrize("archivo,id_,campo,repetido", UNICAS)
-def test_clave_unica_dos_vacios_chocan_y_uno_no(filas, archivo, id_, campo, repetido):
+def test_clave_unica_ignora_los_vacios(filas, archivo, id_, campo, repetido):
     filas[archivo][0][campo] = None
-    assert errores(filas) == []
     fila(filas, archivo, id_)[campo] = None
-    assert etiquetas(filas) == {"clave-unica"}
+    assert etiquetas(filas) == {"obligatorio"}
 
 
 @pytest.mark.parametrize("archivo,id_,campo", [
@@ -244,9 +340,9 @@ def test_referencia_inexistente_sin_cascada(filas, archivo, id_, campo):
     ("ventas", "V003", "id_farmaceutico"),
     ("detalle_ventas", "D004", "id_producto"),
 ])
-def test_referencia_obligatoria_vacia(filas, archivo, id_, campo):
+def test_referencia_vacia_solo_la_informa_obligatorio(filas, archivo, id_, campo):
     fila(filas, archivo, id_)[campo] = None
-    assert etiquetas(filas) == {"referencia"}
+    assert errores(filas) == [f"{archivo}.csv {id_}: [obligatorio] {campo} vacío"]
 
 
 def test_referencia_detalle_a_venta_inexistente_rompe_el_total_de_la_original_cascada_inherente(filas):
@@ -286,7 +382,7 @@ def test_referencia_id_receta_vacio_no_es_error(filas):
 ])
 def test_dominio_sin_cascada(filas, archivo, id_, campo, valor):
     fila(filas, archivo, id_)[campo] = valor
-    assert etiquetas(filas) == {"dominio"}
+    assert etiquetas(filas) == ({"dominio"} if valor else {"obligatorio"})
 
 
 def test_total_distinto_de_la_suma(filas):
@@ -316,9 +412,9 @@ def test_total_venta_sin_items(filas):
     ("detalle_ventas", "D004", "cantidad"),
     ("detalle_ventas", "D004", "precio_unit"),
 ])
-def test_total_con_valores_vacios(filas, archivo, id_, campo):
+def test_total_con_valores_vacios_solo_informa_obligatorio(filas, archivo, id_, campo):
     fila(filas, archivo, id_)[campo] = None
-    assert etiquetas(filas) == {"total"}
+    assert etiquetas(filas) == {"obligatorio"}
 
 
 def test_tipo_venta_con_receta_sin_id_receta(filas):
@@ -408,12 +504,12 @@ def test_dispensas_venta_de_estado_invalido_no_saltea_el_limite_de_autorizadas(f
                               "recetas.csv RC002: [dispensas] 2 realizadas > 1 autorizadas"]
 
 
-def test_dispensas_realizadas_vacias(filas):
+def test_dispensas_realizadas_vacias_solo_informa_obligatorio(filas):
     fila(filas, "recetas", "RC001")["dispensas_realizadas"] = None
-    assert etiquetas(filas) == {"dispensas"}
+    assert etiquetas(filas) == {"obligatorio"}
 
 
-@pytest.mark.parametrize("id_,autorizadas", [("RC006", 2), ("RC006", 0), ("RC002", 4), ("RC001", None)])
+@pytest.mark.parametrize("id_,autorizadas", [("RC006", 2), ("RC006", 0), ("RC002", 4)])
 def test_receta_coherente_dispensas_autorizadas_segun_tipo(filas, id_, autorizadas):
     fila(filas, "recetas", id_)["dispensas_autorizadas"] = autorizadas
     assert etiquetas(filas) == {"receta-coherente"}
@@ -478,9 +574,9 @@ def test_receta_fecha_igual_a_la_emision_es_valida(filas):
 
 
 @pytest.mark.parametrize("archivo,id_,campo", [("ventas", "V003", "fecha"), ("recetas", "RC001", "fecha_emision")])
-def test_receta_fecha_con_fechas_vacias(filas, archivo, id_, campo):
+def test_receta_fecha_con_fechas_vacias_solo_informa_obligatorio(filas, archivo, id_, campo):
     fila(filas, archivo, id_)[campo] = None
-    assert etiquetas(filas) == {"receta-fecha"}
+    assert etiquetas(filas) == {"obligatorio"}
 
 
 def test_no_se_validan_actividad_treinta_dias_stock_ni_unidades(filas):
@@ -515,6 +611,16 @@ def test_columna_ausente_solo_informa_encabezado(originales, archivo):
 
 
 @pytest.mark.parametrize("archivo", CLAVES)
+def test_columna_renombrada_en_todo_el_archivo_solo_informa_encabezado(originales, archivo):
+    for columna in originales[archivo][0]:
+        filas = copy.deepcopy(originales)
+        filas[archivo] = [{(f"{k}_x" if k == columna else k): v for k, v in f.items()} for f in filas[archivo]]
+        encontradas = etiquetas(filas)
+        assert encontradas == {"encabezado", PERDIDA_DE_ENLACE.get((archivo, columna), "encabezado")}, columna
+        assert sum("[encabezado]" in e for e in errores(filas)) == len(filas[archivo]), columna
+
+
+@pytest.mark.parametrize("archivo", CLAVES)
 def test_no_lanza_con_vacios_en_cualquier_campo(originales, archivo):
     for columna in originales[archivo][0]:
         for posicion in range(len(originales[archivo])):
@@ -525,7 +631,7 @@ def test_no_lanza_con_vacios_en_cualquier_campo(originales, archivo):
 
 def test_no_lanza_con_todos_los_campos_vacios(originales):
     filas = {a: [dict.fromkeys(f) for f in lista] for a, lista in originales.items()}
-    assert etiquetas(filas) >= {"id-repetido", "clave-unica", "referencia", "dominio"}
+    assert etiquetas(filas) == {"obligatorio"}
 
 
 @pytest.mark.parametrize("archivo", CLAVES)
@@ -574,6 +680,31 @@ def agregar_adicionales(tmp_path, monkeypatch, archivo, encabezado, *renglones):
     monkeypatch.setattr(lector, "DATOS", tmp_path)
 
 
+@pytest.mark.parametrize("archivo,columna,mal_escrita", [
+    ("clientes", "dni", "dnii"),
+    ("sucursales", "direccion", "dirección"),
+    ("farmaceuticos", "matricula", "matrícula"),
+    ("proveedores", "cuit", "CUIT"),
+    ("productos", "condicion_venta", "condicion"),
+    ("stock_lotes", "nro_lote", "nro_lte"),
+    ("stock_lotes", "unidades", "unidad"),
+    ("recetas", "proxima_dispensa", "proxima"),
+    ("ventas", "total", "totl"),
+    ("detalle_ventas", "cantidad", "cant"),
+])
+def test_encabezado_mal_escrito_en_todo_el_archivo_leido_del_csv(tmp_path, monkeypatch, archivo, columna, mal_escrita):
+    shutil.copytree(PROVISTOS, tmp_path / "provistos")
+    ruta = tmp_path / "provistos" / f"{archivo}.csv"
+    encabezado, resto = ruta.read_text(encoding="utf-8").split("\n", 1)
+    assert encabezado.split(",").count(columna) == 1
+    ruta.write_text(",".join(mal_escrita if c == columna else c for c in encabezado.split(",")) + "\n" + resto,
+                    encoding="utf-8")
+    monkeypatch.setattr(lector, "DATOS", tmp_path)
+    filas = lector.leer_todo(True)
+    assert etiquetas(filas) == {"encabezado"}
+    assert len(errores(filas)) == len(filas[archivo])
+
+
 def test_id_repetido_entre_provistos_y_adicionales_leidos_del_csv(tmp_path, monkeypatch):
     encabezado = ["id_venta", "id_cliente", "id_farmaceutico", "id_receta", "fecha", "tipo", "medio_pago", "total",
                   "estado"]
@@ -588,7 +719,7 @@ def test_columna_de_mas_leida_del_csv(tmp_path, monkeypatch):
                         ["PRV006", "Otro S.A.", "30-1", "Laboratorio", "X", "Y", "1", "True", "de más"])
     filas = lector.leer_todo()
     assert None in filas["proveedores"][-1]
-    assert errores(filas) == ["proveedores.csv PRV006: [encabezado] columnas distintas de las de la primera fila"]
+    assert errores(filas) == ["proveedores.csv PRV006: [encabezado] columnas distintas de las esperadas"]
 
 
 def test_columnas_en_otro_orden_leidas_del_csv(tmp_path, monkeypatch):
@@ -596,4 +727,4 @@ def test_columnas_en_otro_orden_leidas_del_csv(tmp_path, monkeypatch):
     agregar_adicionales(tmp_path, monkeypatch, "proveedores", encabezado,
                         ["Otro S.A.", "PRV006", "30-1", "Laboratorio", "X", "Y", "1", "True"])
     assert errores(lector.leer_todo()) == [
-        "proveedores.csv PRV006: [encabezado] columnas distintas de las de la primera fila"]
+        "proveedores.csv PRV006: [encabezado] columnas distintas de las esperadas"]
