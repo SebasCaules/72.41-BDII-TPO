@@ -1,9 +1,25 @@
 import datetime
 
 from farmared import claves, conexiones, fechas
+from farmared.errores import ValidacionError
+
+CAMPOS = ("id_producto", "id_sucursal", "nro_lote", "unidades", "vencimiento")
 
 
-def cargar_redis(lotes):
+def preparar(lotes):
+    """Arma todo lo que se escribe; si algo falla, falla antes de borrar nada."""
+    preparados = []
+    for l in lotes:
+        mapping = {k: l[k] for k in CAMPOS}
+        if l["id_lote"] is None or None in mapping.values():
+            raise ValidacionError("DATO_INVALIDO", f"lote {l['id_lote']}: valor vacío")
+        puntaje = fechas.a_entero(datetime.date.fromisoformat(l["vencimiento"]))
+        preparados.append((l["id_lote"], claves.lote(l["id_lote"]), mapping,
+                           claves.stock(l["id_sucursal"], l["id_producto"]), puntaje, float(l["unidades"])))
+    return preparados
+
+
+def cargar_redis(preparados):
     r = conexiones.get_redis()
     for patron in claves.PATRONES:
         tanda = []
@@ -16,13 +32,10 @@ def cargar_redis(lotes):
             r.unlink(*tanda)
     r.unlink(claves.UNIDADES, claves.LOTES)
     p = r.pipeline(transaction=True)
-    for l in lotes:
-        venc = datetime.date.fromisoformat(l["vencimiento"])
-        p.hset(claves.lote(l["id_lote"]), mapping={
-            "id_producto": l["id_producto"], "id_sucursal": l["id_sucursal"],
-            "nro_lote": l["nro_lote"], "unidades": l["unidades"], "vencimiento": l["vencimiento"]})
-        p.zadd(claves.stock(l["id_sucursal"], l["id_producto"]), {l["id_lote"]: fechas.a_entero(venc)})
-        p.zadd(claves.UNIDADES, {l["id_lote"]: l["unidades"]})
-        p.sadd(claves.LOTES, l["id_lote"])
+    for id_lote, clave, mapping, stock, puntaje, unidades in preparados:
+        p.hset(clave, mapping=mapping)
+        p.zadd(stock, {id_lote: puntaje})
+        p.zadd(claves.UNIDADES, {id_lote: unidades})
+        p.sadd(claves.LOTES, id_lote)
     p.execute()
-    return {"lotes": len(lotes)}
+    return {"lotes": len(preparados)}

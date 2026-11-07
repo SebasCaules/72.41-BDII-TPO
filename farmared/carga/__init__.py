@@ -29,4 +29,5 @@ def cargar(solo_provistos=False):
     if errores:
         raise ValidacionError("DATO_INVALIDO", "\n".join(errores))
     filas = lector.leer_todo(solo_provistos)
-    return {"mongo": carga_mongo.cargar_mongo(filas), "redis": carga_redis.cargar_redis(filas["stock_lotes"])}
+    docs, lotes = carga_mongo.documentos(filas), carga_redis.preparar(filas["stock_lotes"])
+    return {"mongo": carga_mongo.cargar_mongo(docs), "redis": carga_redis.cargar_redis(lotes)}

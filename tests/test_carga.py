@@ -9,7 +9,7 @@ from pymongo.errors import DuplicateKeyError
 import snapshots
 from farmared import carga, claves, config
 from farmared.__main__ import main
-from farmared.carga import lector
+from farmared.carga import carga_mongo, carga_redis, lector
 from farmared.errores import ValidacionError
 
 PROVISTOS = lector.DATOS / "provistos"
@@ -91,6 +91,7 @@ ADICIONALES = {
     "ventas": "V017,C009,F001,,2026-10-20,Venta libre,Efectivo,2800,Completada",
     "detalle_ventas": "D023,V017,PRD001,1,2800",
 }
+LOTE = "L002,PRD001,S002,L-2501A,35,2027-08-31"
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -175,7 +176,6 @@ def como_texto(valor):
     return str(valor)
 
 
-
 @pytest.mark.parametrize("archivo", FILAS)
 def test_tipo_de_cada_columna_por_archivo(archivo):
     esperada = FILAS[archivo]
@@ -216,20 +216,20 @@ def test_booleano_invalido(copia, capsys, invalido):
     assert "DATO_INVALIDO" in capsys.readouterr().err
 
 
-@pytest.mark.parametrize("archivo, desde, hacia, linea", [
-    ("ventas", "RC007,2025-09-18,", "RC007,2026-13-10,", 2),
-    ("ventas", "RC007,2025-09-18,", "RC007,10/09/2026,", 2),
-    ("ventas", "Obra social,3850,", "Obra social,98.00,", 2),
-    ("stock_lotes", "L-2501A,120,", "L-2501A,12a,", 2),
+@pytest.mark.parametrize("archivo, desde, hacia, linea, motivo", [
+    ("ventas", "RC007,2025-09-18,", "RC007,2026-13-10,", 2, "fecha: fecha inválida"),
+    ("ventas", "RC007,2025-09-18,", "RC007,10/09/2026,", 2, "fecha: fecha inválida"),
+    ("ventas", "Obra social,3850,", "Obra social,98.00,", 2, "total: entero inválido"),
+    ("stock_lotes", "L-2501A,120,", "L-2501A,12a,", 2, "unidades: entero inválido"),
+    ("stock_lotes", "L-2506A,40,2026-11-30", "L-2506A,40,2026-11-31", 6, "vencimiento: fecha inválida"),
 ])
-def test_entero_o_fecha_invalidos(copia, capsys, archivo, desde, hacia, linea):
+def test_entero_o_fecha_invalidos(copia, capsys, archivo, desde, hacia, linea, motivo):
     reemplazar(copia / "provistos" / f"{archivo}.csv", desde, hacia)
-    invalido = hacia.split(",")[-2]
+    invalido = hacia.split(",")[-1] or hacia.split(",")[-2]
     with pytest.raises(ValidacionError) as e:
         lector.leer(archivo, "provistos")
     assert e.value.codigo == "DATO_INVALIDO"
-    assert f"{archivo}.csv línea {linea}" in e.value.mensaje
-    assert invalido in e.value.mensaje
+    assert e.value.mensaje == f"provistos/{archivo}.csv línea {linea}: {motivo} {invalido!r}"
     with pytest.raises(ValidacionError) as e:
         carga.validar(True)
     assert e.value.codigo == "DATO_INVALIDO"
@@ -271,7 +271,176 @@ def test_vencimiento_queda_str():
     assert len(lotes) == 18
     assert all(type(l["vencimiento"]) is str for l in lotes)
     assert lector.valor("vencimiento", "2027-08-31") == "2027-08-31"
+    assert lector.valor("vencimiento", "2028-02-29") == "2028-02-29"
 
+
+@pytest.mark.parametrize("texto", ["2027-02-30", "2027-13-01", "31/08/2027", "20270831", "2027-8-31", "2027-08-31 ",
+                                   "2027-08-31\n", "2027-08-31T00:00", "２０２７-08-31"])
+def test_vencimiento_invalido(texto):
+    with pytest.raises(ValueError) as e:
+        lector.valor("vencimiento", texto)
+    assert str(e.value) == f"vencimiento: fecha inválida {texto!r}"
+
+
+@pytest.mark.parametrize("texto", [str(2**63 - 1), str(-2**63), "0", "-5"])
+def test_entero_dentro_de_int64(texto):
+    assert lector.valor("unidades", texto) == int(texto)
+
+
+@pytest.mark.parametrize("texto", [str(2**63), str(-2**63 - 1), "1" + "0" * 309])
+def test_entero_fuera_de_int64(texto):
+    with pytest.raises(ValueError) as e:
+        lector.valor("precio_unit", texto)
+    assert str(e.value) == f"precio_unit: entero inválido {texto!r}"
+
+
+def test_archivo_que_no_esta_en_utf8(copia, capsys):
+    (copia / "adicionales").mkdir()
+    encabezado = (copia / "provistos" / "clientes.csv").read_text(encoding="utf-8").splitlines()[0]
+    fila = "C009,Ana,Sosa,30111222,ana.s@gmail.com,1140001111,Córdoba,Córdoba,OSDE,OS-999001,True"
+    (copia / "adicionales" / "clientes.csv").write_bytes(f"{encabezado}\n{fila}\n".encode("latin-1"))
+    mensaje = "adicionales/clientes.csv línea 2: no está en UTF-8"
+    with pytest.raises(ValidacionError) as e:
+        carga.validar()
+    assert (e.value.codigo, e.value.mensaje) == ("DATO_INVALIDO", mensaje)
+    assert main(["carga", "--validar"]) == 1
+    assert capsys.readouterr().err == f"Error [DATO_INVALIDO]: {mensaje}\n"
+    assert carga.validar(True) == []
+
+
+def test_error_del_formato_csv(copia, capsys):
+    reemplazar(copia / "provistos" / "stock_lotes.csv", LOTE, f"L002,PRD001,S002,{'x' * 200_000},35,2027-08-31")
+    with pytest.raises(ValidacionError) as e:
+        lector.leer("stock_lotes", "provistos")
+    assert e.value.codigo == "DATO_INVALIDO"
+    assert e.value.mensaje.startswith("provistos/stock_lotes.csv línea 3: field larger than field limit")
+    assert main(["carga"]) == 1
+    assert capsys.readouterr().err.startswith("Error [DATO_INVALIDO]: provistos/stock_lotes.csv línea 3: ")
+
+
+def test_fila_corta_no_agrega_las_columnas_que_faltan(copia):
+    reemplazar(copia / "provistos" / "stock_lotes.csv", LOTE, "L002,PRD001,S002,L-2501A,35")
+    corta = lector.leer("stock_lotes", "provistos")[1]
+    assert list(corta) == ["id_lote", "id_producto", "id_sucursal", "nro_lote", "unidades"]
+
+
+def test_fila_larga_conserva_lo_que_sobra(copia):
+    reemplazar(copia / "provistos" / "stock_lotes.csv", LOTE, LOTE + ",extra")
+    larga = lector.leer("stock_lotes", "provistos")[1]
+    assert larga[None] == ["extra"]
+
+
+VENCIMIENTO_INVALIDO = "provistos/stock_lotes.csv línea 3: vencimiento: fecha inválida"
+UNIDADES_INVALIDAS = "provistos/stock_lotes.csv línea 3: unidades: entero inválido"
+LOTES_INVALIDOS = [
+    ("L002,PRD001,S002,L-2501A,35,2027-02-30", f"{VENCIMIENTO_INVALIDO} '2027-02-30'"),
+    ("L002,PRD001,S002,L-2501A,35,31/08/2027", f"{VENCIMIENTO_INVALIDO} '31/08/2027'"),
+    ("L002,PRD001,S002,L-2501A,35,20270831", f"{VENCIMIENTO_INVALIDO} '20270831'"),
+    ("L002,PRD001,S002,L-2501A,9223372036854775808,2027-08-31", f"{UNIDADES_INVALIDAS} '9223372036854775808'"),
+    ("L002,PRD001,S002,L-2501A,-9223372036854775809,2027-08-31", f"{UNIDADES_INVALIDAS} '-9223372036854775809'"),
+    (f"L002,PRD001,S002,L-2501A,1{'0' * 309},2027-08-31", f"{UNIDADES_INVALIDAS} '1{'0' * 309}'"),
+    ("L002,PRD001,S002,L-2501A,35,", "stock_lotes.csv L002: [obligatorio] vencimiento vacío"),
+    ("L002,PRD001,S002,L-2501A,,2027-08-31", "stock_lotes.csv L002: [obligatorio] unidades vacío"),
+    ("L002,PRD001,S002,,35,2027-08-31", "stock_lotes.csv L002: [obligatorio] nro_lote vacío"),
+    ("L002,PRD001,S002,L-2501A,35", "stock_lotes.csv L002: [encabezado] columnas distintas de las esperadas"),
+    ("L002,PRD001,S002,L-2501A,35,2027-08-31,extra",
+     "stock_lotes.csv L002: [encabezado] columnas distintas de las esperadas"),
+]
+PRODUCTO = "Venta libre,3500,PRV001"
+PRECIO_INVALIDO = "provistos/productos.csv línea 3: precio_unit: entero inválido"
+DATOS_INVALIDOS = [("stock_lotes", LOTE, hacia, motivo) for hacia, motivo in LOTES_INVALIDOS] + [
+    ("productos", PRODUCTO, "Venta libre,9223372036854775808,PRV001", f"{PRECIO_INVALIDO} '9223372036854775808'"),
+    ("productos", PRODUCTO, "Venta libre,-9223372036854775809,PRV001", f"{PRECIO_INVALIDO} '-9223372036854775809'"),
+]
+
+
+@pytest.mark.parametrize("archivo, desde, hacia, motivo", DATOS_INVALIDOS)
+def test_dato_invalido_no_llega_a_ningun_motor(copia, capsys, db, r, archivo, desde, hacia, motivo):
+    carga.cargar(solo_provistos=True)
+    alterar_motores(db, r)
+    reemplazar(copia / "provistos" / f"{archivo}.csv", desde, hacia)
+    antes = fotos()
+    try:
+        assert carga.validar(True) == [motivo]
+    except ValidacionError as e:
+        assert (e.codigo, e.mensaje) == ("DATO_INVALIDO", motivo)
+    with pytest.raises(ValidacionError) as e:
+        carga.cargar(solo_provistos=True)
+    assert e.value.codigo == "DATO_INVALIDO"
+    assert main(["carga"]) == 1
+    error = capsys.readouterr().err
+    assert error == f"Error [DATO_INVALIDO]: {motivo}\n"
+    assert fotos() == antes
+
+
+ENCABEZADOS_MAL_ESCRITOS = [("stock_lotes", "nro_lote", "nro_lte"), ("stock_lotes", "unidades", "unidad"),
+                            ("clientes", "dni", "dnii")]
+
+
+def escribir_mal_el_encabezado(carpeta, archivo, columna, mal_escrita):
+    ruta = carpeta / "provistos" / f"{archivo}.csv"
+    encabezado, resto = ruta.read_text(encoding="utf-8").split("\n", 1)
+    columnas = encabezado.split(",")
+    assert columnas.count(columna) == 1
+    ruta.write_text(",".join(mal_escrita if c == columna else c for c in columnas) + "\n" + resto, encoding="utf-8")
+
+
+@pytest.mark.parametrize("archivo, columna, mal_escrita", ENCABEZADOS_MAL_ESCRITOS)
+def test_encabezado_mal_escrito_no_llega_a_ningun_motor(copia, capsys, db, r, archivo, columna, mal_escrita):
+    carga.cargar(solo_provistos=True)
+    alterar_motores(db, r)
+    escribir_mal_el_encabezado(copia, archivo, columna, mal_escrita)
+    antes = fotos()
+    assert {e.split(": ")[1].split()[0] for e in carga.validar(True)} == {"[encabezado]"}
+    assert main(["carga"]) == 1
+    assert capsys.readouterr().err.startswith(f"Error [DATO_INVALIDO]: {archivo}.csv ")
+    assert fotos() == antes
+
+
+@pytest.mark.parametrize("archivo, columna, mal_escrita", ENCABEZADOS_MAL_ESCRITOS)
+def test_sin_validar_el_encabezado_mal_escrito_falla_antes_de_borrar(copia, db, r, monkeypatch, archivo, columna,
+                                                                     mal_escrita):
+    carga.cargar(solo_provistos=True)
+    alterar_motores(db, r)
+    escribir_mal_el_encabezado(copia, archivo, columna, mal_escrita)
+    antes = fotos()
+    monkeypatch.setattr(carga, "validar", lambda *_: [])
+    with pytest.raises((KeyError, ValidacionError)):
+        carga.cargar(solo_provistos=True)
+    assert fotos() == antes
+
+
+def test_documentos_rechaza_lo_que_mongo_no_aceptaria():
+    filas = lector.leer_todo(True)
+    filas["clientes"].append(dict(filas["clientes"][0], dni="NUEVO"))
+    with pytest.raises(ValidacionError, match="clientes: _id repetido"):
+        carga_mongo.documentos(filas)
+    filas = lector.leer_todo(True)
+    filas["productos"][1]["precio_unit"] = 2**63
+    with pytest.raises(ValidacionError, match="productos PRD002: "):
+        carga_mongo.documentos(filas)
+
+
+def test_preparar_rechaza_un_lote_con_valor_vacio():
+    lotes = lector.leer_todo(True)["stock_lotes"]
+    lotes[1]["nro_lote"] = None
+    with pytest.raises(ValidacionError, match="lote L002: valor vacío"):
+        carga_redis.preparar(lotes)
+
+
+@pytest.mark.parametrize("modulo, funcion", [(carga_redis, "preparar"), (carga_mongo, "documentos")])
+def test_nada_se_borra_si_falla_la_preparacion(copia, db, r, monkeypatch, modulo, funcion):
+    carga.cargar(solo_provistos=True)
+    alterar_motores(db, r)
+    antes = fotos()
+
+    def falla(*_):
+        raise RuntimeError("preparación interrumpida")
+
+    monkeypatch.setattr(modulo, funcion, falla)
+    with pytest.raises(RuntimeError):
+        carga.cargar(solo_provistos=True)
+    assert fotos() == antes
 
 
 def test_conteos(datos_provistos, db):
@@ -361,7 +530,6 @@ def test_ninguna_coleccion_guarda_stock(datos_provistos, db):
             assert not prohibidos & set(campos(documento)), documento["_id"]
 
 
-
 def test_claves_de_redis(datos_provistos, r):
     estado = snapshots.redis_snap()
     assert len(estado) == 37
@@ -427,7 +595,6 @@ def test_claves_viejas_del_esquema_se_borran(datos_provistos, r):
     assert r.zscore(claves.UNIDADES, "X0") is None
 
 
-
 @pytest.mark.parametrize("coleccion, campo", UNICOS)
 def test_indices_unicos(datos_provistos, db, coleccion, campo):
     indice = db[coleccion].index_information()[f"{campo}_1"]
@@ -463,7 +630,6 @@ def test_indice_unico_rechaza_el_duplicado(datos_provistos, db, coleccion, campo
     assert db[coleccion].count_documents({}) == CONTEOS[coleccion]
 
 
-
 def test_volver_a_cargar_restaura_el_estado(datos_provistos, db, r):
     mongo, redis_ = fotos()
     alterar_motores(db, r)
@@ -486,7 +652,6 @@ def test_volver_a_cargar_restaura_indices_contadores_y_altas(datos_provistos, db
     carga.cargar(solo_provistos=True)
     assert snapshots.mongo_snap() == mongo
     assert snapshots.redis_snap() == redis_
-
 
 
 def test_cargar_devuelve_los_conteos(copia):

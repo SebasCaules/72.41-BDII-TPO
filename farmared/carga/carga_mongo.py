@@ -1,9 +1,12 @@
 import re
-from collections import defaultdict
+from collections import Counter, defaultdict
 
+import bson
+from bson.errors import InvalidDocument
 from pymongo import IndexModel
 
 from farmared import conexiones
+from farmared.errores import ValidacionError
 
 COLECCIONES = {"clientes": "id_cliente", "sucursales": "id_sucursal", "farmaceuticos": "id_farmaceutico",
                "proveedores": "id_proveedor", "productos": "id_producto", "recetas": "id_receta",
@@ -37,13 +40,28 @@ def documentos(filas):
         {"_id": "ventas", "ultimo": max(_sufijo(v["_id"]) for v in docs["ventas"])},
         {"_id": "detalle_ventas", "ultimo": max(_sufijo(d["id_detalle"]) for d in filas["detalle_ventas"])},
     ]
+    return _comprobar(docs)
+
+
+def _comprobar(docs):
+    """Falla antes de borrar nada si algún documento no entraría en su colección."""
+    for col, lista in docs.items():
+        for campos in [("_id",)] + [tuple(c for c, _ in k) for k, o in INDICES.get(col, []) if o.get("unique")]:
+            repetidos = [v for v, n in Counter(tuple(d.get(c) for c in campos) for d in lista).items() if n > 1]
+            if repetidos:
+                raise ValidacionError("DATO_INVALIDO", f"{col}: {', '.join(campos)} repetido {repetidos[0]}")
+        for d in lista:
+            try:
+                bson.encode(d)
+            except (OverflowError, InvalidDocument) as e:
+                raise ValidacionError("DATO_INVALIDO", f"{col} {d.get('_id')}: {e}") from e
     return docs
 
 
-def cargar_mongo(filas):
+def cargar_mongo(docs):
     db = conexiones.get_db()
     conteos = {}
-    for col, lista in documentos(filas).items():
+    for col, lista in docs.items():
         db.drop_collection(col)
         modelos = [IndexModel(k, **o) for k, o in INDICES.get(col, [])]
         if modelos:
