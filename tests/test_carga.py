@@ -7,7 +7,7 @@ import pytest
 from pymongo.errors import DuplicateKeyError
 
 import snapshots
-from farmared import carga, claves
+from farmared import carga, claves, config
 from farmared.__main__ import main
 from farmared.carga import lector
 from farmared.errores import ValidacionError
@@ -115,11 +115,17 @@ def con_adicionales(copia):
     return copia
 
 
+AJENAS = ("otra:clave", "lote", "lotes_viejos", "stockeo", "stock")
+
+
 @pytest.fixture
 def clave_ajena(r):
-    r.set("otra:clave", "valor")
-    yield "otra:clave"
-    r.delete("otra:clave")
+    assert config.redis_db() == 1
+    r.flushdb()
+    for clave in AJENAS:
+        r.set(clave, "valor")
+    yield AJENAS
+    r.delete(*AJENAS)
 
 
 def crudas(archivo):
@@ -203,6 +209,27 @@ def test_booleano_invalido(copia, capsys, invalido):
     assert e.value.codigo == "DATO_INVALIDO"
     assert "clientes.csv línea 2" in e.value.mensaje
     assert "activo" in e.value.mensaje
+    with pytest.raises(ValidacionError) as e:
+        carga.validar(True)
+    assert e.value.codigo == "DATO_INVALIDO"
+    assert main(["carga", "--validar"]) == 1
+    assert "DATO_INVALIDO" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("archivo, desde, hacia, linea", [
+    ("ventas", "RC007,2025-09-18,", "RC007,2026-13-10,", 2),
+    ("ventas", "RC007,2025-09-18,", "RC007,10/09/2026,", 2),
+    ("ventas", "Obra social,3850,", "Obra social,98.00,", 2),
+    ("stock_lotes", "L-2501A,120,", "L-2501A,12a,", 2),
+])
+def test_entero_o_fecha_invalidos(copia, capsys, archivo, desde, hacia, linea):
+    reemplazar(copia / "provistos" / f"{archivo}.csv", desde, hacia)
+    invalido = hacia.split(",")[-2]
+    with pytest.raises(ValidacionError) as e:
+        lector.leer(archivo, "provistos")
+    assert e.value.codigo == "DATO_INVALIDO"
+    assert f"{archivo}.csv línea {linea}" in e.value.mensaje
+    assert invalido in e.value.mensaje
     with pytest.raises(ValidacionError) as e:
         carga.validar(True)
     assert e.value.codigo == "DATO_INVALIDO"
@@ -378,8 +405,9 @@ def test_lotes_unidades_con_las_unidades_como_score(datos_provistos, r):
 
 def test_clave_ajena_sobrevive(r, clave_ajena):
     carga.cargar(solo_provistos=True)
-    assert r.get(clave_ajena) == "valor"
+    assert [r.get(clave) for clave in clave_ajena] == ["valor"] * len(clave_ajena)
     assert len(snapshots.redis_snap()) == 37
+    assert r.dbsize() == 37 + len(clave_ajena)
 
 
 def test_claves_viejas_del_esquema_se_borran(datos_provistos, r):
@@ -527,6 +555,26 @@ def test_adicionales_se_suman(con_adicionales, db, r):
     assert [i["id_detalle"] for i in venta["items"]] == ["D023"]
     assert r.hget("lote:L019", "unidades") == "10"
     assert r.zrange("stock:S001:PRD001", 0, -1) == ["L001", "L019"]
+
+
+def test_contadores_toman_el_mayor_sufijo(copia, db):
+    (copia / "adicionales").mkdir()
+    filas = {
+        "clientes": ["C120,Ana,Sosa,30111222,ana.s@gmail.com,1140001111,Buenos Aires,Buenos Aires,OSDE,OS-999001,True",
+                     "C010,Juan,Paz,30111333,juan.p@gmail.com,1140002222,Buenos Aires,Buenos Aires,PAMI,PA-999002,True"],
+        "ventas": ["V1000,C120,F001,,2026-10-20,Venta libre,Efectivo,2800,Completada",
+                   "V999,C010,F001,,2026-10-21,Venta libre,Efectivo,2800,Completada"],
+        "detalle_ventas": ["D1000,V1000,PRD001,1,2800", "D999,V999,PRD001,1,2800"],
+    }
+    for archivo, lineas in filas.items():
+        encabezado = (copia / "provistos" / f"{archivo}.csv").read_text(encoding="utf-8").splitlines()[0]
+        (copia / "adicionales" / f"{archivo}.csv").write_text("\n".join([encabezado, *lineas]) + "\n",
+                                                              encoding="utf-8")
+    assert carga.validar() == []
+    carga.cargar()
+    assert list(db.contadores.find(sort=[("_id", 1)])) == [
+        {"_id": "clientes", "ultimo": 120}, {"_id": "detalle_ventas", "ultimo": 1000},
+        {"_id": "ventas", "ultimo": 1000}]
 
 
 def test_solo_provistos_ignora_adicionales(con_adicionales, capsys, db, r):
