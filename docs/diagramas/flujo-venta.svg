@@ -1,0 +1,177 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="1647" viewBox="0 0 1320 1647">
+  <title>Flujo del registro de una venta</title>
+  <defs>
+    <marker id="flecha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#4a5563"/>
+    </marker>
+  </defs>
+  <style>
+    text { font-family: sans-serif; }
+    .fondo { fill: #ffffff; }
+    .app { fill: #eef3fa; stroke: #2b4c7e; stroke-width: 2; }
+    .mongo { fill: #f1f8f2; stroke: #2f6b3a; stroke-width: 2; }
+    .redis { fill: #fdf6f5; stroke: #9b2226; stroke-width: 2; }
+    .rech { fill: #fff4e5; stroke: #b45309; stroke-width: 2; }
+    .dec { fill: #ffffff; stroke: #4a5563; stroke-width: 2; }
+    .reint { fill: #f5f3ff; stroke: #6b3fa0; stroke-width: 2; }
+    .reintcab { fill: #6b3fa0; }
+    .nota { fill: #ffffff; stroke: #9aa5b1; stroke-width: 1.5; stroke-dasharray: 6 4; }
+    .tx { font-size: 19px; fill: #1d2733; }
+    .txb { font-size: 20px; font-weight: bold; fill: #1d2733; }
+    .txc { font-size: 17px; fill: #1d2733; }
+    .txcb { font-size: 17px; font-weight: bold; fill: #1d2733; }
+    .dectx { font-size: 19px; font-weight: bold; fill: #1d2733; }
+    .rtx { font-size: 17px; fill: #1d2733; }
+    .rtit { font-size: 20px; font-weight: bold; fill: #ffffff; }
+    .ntx { font-size: 17px; font-style: italic; fill: #4a5563; }
+    .flecha { fill: none; stroke: #4a5563; stroke-width: 2; marker-end: url(#flecha); }
+    .error { fill: none; stroke: #6b3fa0; stroke-width: 2; stroke-dasharray: 7 5; marker-end: url(#flecha); }
+    .punteada { fill: none; stroke: #9aa5b1; stroke-width: 1.5; stroke-dasharray: 3 4; }
+    .rama { font-size: 17px; font-weight: bold; fill: #4a5563; }
+    .ramae { font-size: 16px; font-weight: bold; fill: #6b3fa0; }
+    .titulo { font-size: 28px; font-weight: bold; fill: #1d2733; }
+    .sub { font-size: 18px; fill: #4a5563; }
+    .leyenda { fill: #ffffff; stroke: #9aa5b1; stroke-width: 1.5; }
+    .leytit { font-size: 18px; font-weight: bold; fill: #1d2733; }
+    .leytx { font-size: 17px; fill: #1d2733; }
+  </style>
+  <rect class="fondo" x="0" y="0" width="1320" height="1647"/>
+  <text class="titulo" x="20" y="42">Registro de una venta</text>
+  <text class="sub" x="20" y="72">q14 llama a q15 dentro de la transacción: todo o nada entre MongoDB y Redis</text>
+
+  <!-- Leyenda -->
+  <rect class="leyenda" x="980" y="100" width="320" height="190" rx="6"/>
+  <text class="leytit" x="996" y="127">Dónde ocurre cada paso</text>
+  <rect class="app" x="996" y="144" width="36" height="19" rx="4"/>
+  <text class="leytx" x="1044" y="159">Aplicación</text>
+  <rect class="mongo" x="996" y="172" width="36" height="19" rx="4"/>
+  <text class="leytx" x="1044" y="187">MongoDB, en la transacción</text>
+  <rect class="redis" x="996" y="200" width="36" height="19" rx="4"/>
+  <text class="leytx" x="1044" y="215">Redis</text>
+  <rect class="rech" x="996" y="228" width="36" height="19" rx="4"/>
+  <text class="leytx" x="1044" y="243">Rechazo: no queda nada</text>
+  <rect class="reint" x="996" y="256" width="36" height="19" rx="4"/>
+  <text class="leytx" x="1044" y="271">Reintento</text>
+
+  <!-- Flujo principal -->
+  <rect class="app" x="380" y="100" width="520" height="78" rx="39"/>
+  <text class="txb" x="640" y="133" text-anchor="middle">Pedido de venta</text>
+  <text class="txc" x="640" y="159" text-anchor="middle">cliente, farmacéutico, ítems, medio de pago y receta</text>
+  <line class="flecha" x1="640" y1="178" x2="640" y2="202"/>
+  <rect class="mongo" x="380" y="204" width="520" height="54" rx="6"/>
+  <text class="tx" x="640" y="238" text-anchor="middle">Abre una sesión e inicia la transacción</text>
+  <line class="flecha" x1="640" y1="258" x2="640" y2="282"/>
+  <rect class="mongo" x="380" y="284" width="520" height="78" rx="6"/>
+  <text class="tx" x="640" y="317" text-anchor="middle">Valida con la sesión: cliente, farmacéutico,</text>
+  <text class="tx" x="640" y="343" text-anchor="middle">sucursal, productos, medio de pago y receta</text>
+  <line class="flecha" x1="640" y1="362" x2="640" y2="386"/>
+  <polygon class="dec" points="640,388 870,438 640,488 410,438"/>
+  <text class="dectx" x="640" y="445" text-anchor="middle">¿Pasa las validaciones?</text>
+  <line class="flecha" x1="870" y1="438" x2="978" y2="438"/>
+  <text class="rama" x="925" y="428" text-anchor="middle">no</text>
+  <rect class="rech" x="980" y="383" width="320" height="110" rx="6"/>
+  <text class="txcb" x="1140" y="410" text-anchor="middle">Rechazo con su código</text>
+  <text class="txc" x="1140" y="432" text-anchor="middle">p. ej. RECETA_NO_VIGENTE</text>
+  <text class="txc" x="1140" y="454" text-anchor="middle">Se aborta la transacción:</text>
+  <text class="txc" x="1140" y="476" text-anchor="middle">no queda venta ni receta.</text>
+  <line class="flecha" x1="640" y1="488" x2="640" y2="516"/>
+  <text class="rama" x="652" y="510">sí</text>
+  <rect class="mongo" x="380" y="518" width="520" height="78" rx="6"/>
+  <text class="tx" x="640" y="551" text-anchor="middle">Toma los ids con $inc en contadores</text>
+  <text class="tx" x="640" y="577" text-anchor="middle">e inserta la venta con sus items embebidos</text>
+  <line class="flecha" x1="640" y1="596" x2="640" y2="620"/>
+  <rect class="mongo" x="380" y="622" width="520" height="78" rx="6"/>
+  <text class="tx" x="640" y="655" text-anchor="middle">Si hay receta, la actualiza con una condición</text>
+  <text class="tx" x="640" y="681" text-anchor="middle">sobre su estado y sus dispensas</text>
+  <line class="flecha" x1="900" y1="661" x2="978" y2="661"/>
+  <text class="rama" x="940" y="631" text-anchor="middle">no se</text>
+  <text class="rama" x="940" y="650" text-anchor="middle">cumple</text>
+  <rect class="rech" x="980" y="606" width="320" height="110" rx="6"/>
+  <text class="txcb" x="1140" y="633" text-anchor="middle">RECETA_MODIFICADA</text>
+  <text class="txc" x="1140" y="655" text-anchor="middle">La receta cambió durante la venta;</text>
+  <text class="txc" x="1140" y="677" text-anchor="middle">se aborta la transacción, no queda</text>
+  <text class="txc" x="1140" y="699" text-anchor="middle">nada y no se reintenta.</text>
+  <line class="flecha" x1="640" y1="700" x2="640" y2="724"/>
+  <rect class="redis" x="380" y="726" width="520" height="78" rx="6"/>
+  <text class="tx" x="640" y="759" text-anchor="middle">Script Lua: planifica todos los ítems por</text>
+  <text class="tx" x="640" y="785" text-anchor="middle">vencimiento y omite los vencidos, sin escribir</text>
+  <line class="flecha" x1="640" y1="804" x2="640" y2="828"/>
+  <polygon class="dec" points="640,830 870,880 640,930 410,880"/>
+  <text class="dectx" x="640" y="887" text-anchor="middle">¿Alcanza el stock?</text>
+  <line class="flecha" x1="870" y1="880" x2="978" y2="880"/>
+  <text class="rama" x="925" y="870" text-anchor="middle">no</text>
+  <rect class="rech" x="980" y="825" width="320" height="110" rx="6"/>
+  <text class="txcb" x="1140" y="852" text-anchor="middle">STOCK_INSUFICIENTE</text>
+  <text class="txc" x="1140" y="874" text-anchor="middle">El script devuelve FALTA sin</text>
+  <text class="txc" x="1140" y="896" text-anchor="middle">tocar ningún lote; se aborta</text>
+  <text class="txc" x="1140" y="918" text-anchor="middle">la transacción y no queda nada.</text>
+  <line class="flecha" x1="640" y1="930" x2="640" y2="958"/>
+  <text class="rama" x="652" y="952">sí</text>
+  <rect class="redis" x="380" y="960" width="520" height="78" rx="6"/>
+  <text class="tx" x="640" y="993" text-anchor="middle">El script descuenta los lotes (HINCRBY, ZINCRBY)</text>
+  <text class="tx" x="640" y="1019" text-anchor="middle">y devuelve cada lote con sus unidades</text>
+  <line class="flecha" x1="640" y1="1038" x2="640" y2="1062"/>
+  <rect class="redis" x="380" y="1064" width="520" height="78" rx="6"/>
+  <text class="tx" x="640" y="1097" text-anchor="middle">stock.py lee el id_producto de cada lote</text>
+  <text class="tx" x="640" y="1123" text-anchor="middle">(HGET en pipeline) y arma los consumos</text>
+  <line class="punteada" x1="900" y1="1103" x2="980" y2="1103"/>
+  <rect class="nota" x="980" y="1068" width="320" height="70" rx="6"/>
+  <text class="ntx" x="1140" y="1098" text-anchor="middle">Si esta lectura falla, stock.py repone</text>
+  <text class="ntx" x="1140" y="1122" text-anchor="middle">el stock antes de propagar el error.</text>
+  <line class="flecha" x1="640" y1="1142" x2="640" y2="1166"/>
+  <rect class="mongo" x="380" y="1168" width="520" height="78" rx="6"/>
+  <text class="tx" x="640" y="1201" text-anchor="middle">Marca la venta: stock_descontado true</text>
+  <text class="tx" x="640" y="1227" text-anchor="middle">y guarda los consumos</text>
+  <line class="punteada" x1="900" y1="1207" x2="980" y2="1207"/>
+  <rect class="nota" x="980" y="1172" width="320" height="70" rx="6"/>
+  <text class="ntx" x="1140" y="1202" text-anchor="middle">Si esta marca falla, q15 repone</text>
+  <text class="ntx" x="1140" y="1226" text-anchor="middle">el stock antes de propagar el error.</text>
+  <line class="flecha" x1="640" y1="1246" x2="640" y2="1270"/>
+  <rect class="mongo" x="380" y="1272" width="520" height="54" rx="6"/>
+  <text class="tx" x="640" y="1306" text-anchor="middle">Commit de la transacción</text>
+  <line class="flecha" x1="640" y1="1326" x2="640" y2="1350"/>
+  <polygon class="dec" points="640,1352 870,1402 640,1452 410,1402"/>
+  <text class="dectx" x="640" y="1409" text-anchor="middle">¿Confirmó el commit?</text>
+  <line class="flecha" x1="870" y1="1402" x2="978" y2="1402"/>
+  <text class="rama" x="925" y="1392" text-anchor="middle">no</text>
+  <line class="flecha" x1="640" y1="1452" x2="640" y2="1484"/>
+  <text class="rama" x="652" y="1478">sí</text>
+  <rect class="app" x="380" y="1486" width="520" height="78" rx="39"/>
+  <text class="txb" x="640" y="1519" text-anchor="middle">Venta registrada</text>
+  <text class="txc" x="640" y="1545" text-anchor="middle">devuelve la venta, la receta y los consumos</text>
+
+  <!-- Commit fallido -->
+  <rect class="dec" x="980" y="1359" width="320" height="86" rx="10"/>
+  <text class="txcb" x="1140" y="1395" text-anchor="middle">¿Resultado del commit desconocido</text>
+  <text class="txcb" x="1140" y="1418" text-anchor="middle">y la venta figura confirmada?</text>
+  <path class="flecha" d="M 1002 1445 V 1525 H 902"/>
+  <text class="rama" x="992" y="1471" text-anchor="end">sí</text>
+  <line class="flecha" x1="1165" y1="1445" x2="1165" y2="1483"/>
+  <text class="rama" x="1177" y="1471">no</text>
+  <rect class="redis" x="1030" y="1485" width="270" height="88" rx="6"/>
+  <text class="txcb" x="1165" y="1512" text-anchor="middle">q14 compensa en Redis</text>
+  <text class="txc" x="1165" y="1534" text-anchor="middle">repone los consumos del script</text>
+  <text class="txc" x="1165" y="1556" text-anchor="middle">(MULTI: HINCRBY, ZINCRBY)</text>
+
+  <!-- Reintento -->
+  <rect class="reint" x="20" y="487" width="290" height="324" rx="6"/>
+  <path class="reintcab" d="M 26 487 h 278 a 6 6 0 0 1 6 6 v 34 h -290 v -34 a 6 6 0 0 1 6 -6 z"/>
+  <text class="rtit" x="36" y="515">Reintento</text>
+  <text class="rtx" x="36" y="557">Si MongoDB aborta con la etiqueta</text>
+  <text class="rtx" x="36" y="579">TransientTransactionError (dos</text>
+  <text class="rtx" x="36" y="601">ventas chocan en contadores o</text>
+  <text class="rtx" x="36" y="623">en la receta), se espera un</text>
+  <text class="rtx" x="36" y="645">tiempo aleatorio y se repite</text>
+  <text class="rtx" x="36" y="667">todo, hasta 5 intentos.</text>
+  <text class="rtx" x="36" y="697">Es seguro: la transacción ya</text>
+  <text class="rtx" x="36" y="719">se abortó y el stock ya se</text>
+  <text class="rtx" x="36" y="741">repuso.</text>
+  <text class="rtx" x="36" y="771">Cualquier otro error llega</text>
+  <text class="rtx" x="36" y="793">al llamador.</text>
+  <line class="error" x1="380" y1="557" x2="312" y2="557"/>
+  <text class="ramae" x="345" y="547" text-anchor="middle">error</text>
+  <path class="error" d="M 1165 1573 V 1617 H 165 V 813"/>
+  <text class="ramae" x="640" y="1605" text-anchor="middle">el error sigue hacia el reintento</text>
+  <path class="error" d="M 165 487 V 139 H 378"/>
+  <text class="ramae" x="177" y="313">nuevo intento</text>
+</svg>

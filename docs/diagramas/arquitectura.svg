@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="993" viewBox="0 0 1320 993">
+  <title>Arquitectura de FarmaRed</title>
+  <defs>
+    <marker id="flecha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#4a5563"/>
+    </marker>
+  </defs>
+  <style>
+    text { font-family: sans-serif; }
+    .fondo { fill: #ffffff; }
+    .marco { fill: #fafbfc; stroke: #9aa5b1; stroke-width: 2; stroke-dasharray: 10 6; }
+    .marcotx { font-size: 18px; font-weight: bold; fill: #5f6b7a; }
+    .neutra { fill: #f3f4f6; stroke: #6b7280; stroke-width: 2; }
+    .neutracab { fill: #6b7280; }
+    .app { fill: #eef3fa; stroke: #2b4c7e; stroke-width: 2; }
+    .appcab { fill: #2b4c7e; }
+    .modulo { fill: #ffffff; stroke: #7d9ac6; stroke-width: 1.5; }
+    .mongo { fill: #f1f8f2; stroke: #2f6b3a; stroke-width: 2; }
+    .mongocab { fill: #2f6b3a; }
+    .redis { fill: #fdf6f5; stroke: #9b2226; stroke-width: 2; }
+    .rediscab { fill: #9b2226; }
+    .tit { font-size: 21px; font-weight: bold; fill: #ffffff; }
+    .tx { font-size: 19px; fill: #1d2733; }
+    .txb { font-size: 19px; font-weight: bold; fill: #1d2733; }
+    .mod { font-size: 19px; fill: #1d2733; }
+    .gm { font-size: 19px; font-weight: bold; fill: #2f6b3a; }
+    .gr { font-size: 19px; font-weight: bold; fill: #9b2226; }
+    .flecha { fill: none; stroke: #4a5563; stroke-width: 2; marker-end: url(#flecha); }
+    .doble { fill: none; stroke: #4a5563; stroke-width: 2; marker-start: url(#flecha); marker-end: url(#flecha); }
+    .sinrel { fill: none; stroke: #9aa5b1; stroke-width: 2; stroke-dasharray: 6 5; }
+    .etq { font-size: 17px; fill: #4a5563; }
+    .etqb { font-size: 17px; font-weight: bold; fill: #4a5563; }
+    .chica { font-size: 16px; fill: #5f6b7a; }
+    .nota { font-size: 17px; font-style: italic; fill: #4a5563; }
+    .titulo { font-size: 28px; font-weight: bold; fill: #1d2733; }
+    .sub { font-size: 18px; fill: #4a5563; }
+  </style>
+  <rect class="fondo" x="0" y="0" width="1320" height="993"/>
+  <text class="titulo" x="20" y="42">Arquitectura</text>
+  <text class="sub" x="20" y="72">Una aplicación y dos motores NoSQL de paradigmas distintos; solo la aplicación habla con ambos.</text>
+  <rect class="marco" x="20" y="96" width="1280" height="873" rx="10"/>
+  <text class="marcotx" x="38" y="126">Codespace: docker-compose con tres contenedores</text>
+
+  <!-- Aplicación -->
+  <rect class="app" x="404" y="146" width="512" height="286" rx="6"/>
+  <path class="appcab" d="M 410 146 h 500 a 6 6 0 0 1 6 6 v 34 h -512 v -34 a 6 6 0 0 1 6 -6 z"/>
+  <text class="tit" x="660" y="174" text-anchor="middle">Aplicación Python 3.12 (contenedor app)</text>
+  <rect class="modulo" x="422" y="202" width="476" height="46" rx="5"/>
+  <text class="mod" x="660" y="232" text-anchor="middle">python -m farmared: línea de comandos</text>
+  <rect class="modulo" x="422" y="258" width="476" height="46" rx="5"/>
+  <text class="mod" x="660" y="288" text-anchor="middle">carga: valida los CSV y recarga los dos motores</text>
+  <rect class="modulo" x="422" y="314" width="476" height="46" rx="5"/>
+  <text class="mod" x="660" y="344" text-anchor="middle">q01 a q13: consultas y ABM de clientes</text>
+  <rect class="modulo" x="422" y="370" width="476" height="46" rx="5"/>
+  <text class="mod" x="660" y="400" text-anchor="middle">q14 y q15: venta y stock (stock.py, script Lua)</text>
+
+  <!-- Archivos CSV -->
+  <rect class="neutra" x="44" y="203.0" width="290" height="172" rx="6"/>
+  <path class="neutracab" d="M 50 203 h 278 a 6 6 0 0 1 6 6 v 34 h -290 v -34 a 6 6 0 0 1 6 -6 z"/>
+  <text class="tit" x="60" y="231">Archivos CSV</text>
+  <text class="tx" x="60" y="277">datos/provistos: 9 archivos</text>
+  <text class="tx" x="60" y="304">datos/adicionales: casos</text>
+  <text class="tx" x="60" y="331">propios con los mismos</text>
+  <text class="tx" x="60" y="358">nombres</text>
+
+  <!-- Terminal -->
+  <rect class="neutra" x="986" y="203.0" width="290" height="172" rx="6"/>
+  <path class="neutracab" d="M 992 203 h 278 a 6 6 0 0 1 6 6 v 34 h -290 v -34 a 6 6 0 0 1 6 -6 z"/>
+  <text class="tit" x="1002" y="231">Terminal</text>
+  <text class="tx" x="1002" y="277">python -m farmared q02</text>
+  <text class="tx" x="1002" y="302">python -m farmared carga</text>
+  <text class="tx" x="1002" y="335">Cada comando imprime</text>
+  <text class="tx" x="1002" y="360">su resultado en JSON.</text>
+  <line class="flecha" x1="334" y1="289" x2="402" y2="289"/>
+  <text class="etqb" x="369" y="279" text-anchor="middle">lee</text>
+  <line class="doble" x1="918" y1="289" x2="984" y2="289"/>
+  <text class="etqb" x="951" y="279" text-anchor="middle">uso</text>
+
+  <!-- MongoDB -->
+  <rect class="mongo" x="50" y="552" width="560" height="338" rx="6"/>
+  <path class="mongocab" d="M 56 552 h 548 a 6 6 0 0 1 6 6 v 34 h -560 v -34 a 6 6 0 0 1 6 -6 z"/>
+  <text class="tit" x="66" y="580">MongoDB 8.3 (contenedor mongo)</text>
+  <text class="tx" x="66" y="628">Replica set rs0 de un nodo, base farmared</text>
+  <text class="txb" x="66" y="663">Guarda las entidades y las ventas:</text>
+  <text class="tx" x="66" y="690">clientes, sucursales, farmaceuticos, proveedores,</text>
+  <text class="tx" x="66" y="717">productos, recetas y contadores;</text>
+  <text class="tx" x="66" y="744">ventas con sus items embebidos;</text>
+  <text class="tx" x="66" y="771">vista ingresos_mes_actual</text>
+  <text class="gm" x="66" y="806">Garantiza transacciones multidocumento</text>
+  <text class="tx" x="66" y="841">Consultas: q01 a q15 (en q08: nombre del producto,</text>
+  <text class="tx" x="66" y="868">id_proveedor, razón social y nombre de la sucursal)</text>
+
+  <!-- Redis -->
+  <rect class="redis" x="710" y="552" width="560" height="338" rx="6"/>
+  <path class="rediscab" d="M 716 552 h 548 a 6 6 0 0 1 6 6 v 34 h -560 v -34 a 6 6 0 0 1 6 -6 z"/>
+  <text class="tit" x="726" y="580">Redis 8.10 (contenedor redis)</text>
+  <text class="tx" x="726" y="628">Standalone, persistencia AOF con everysec</text>
+  <text class="txb" x="726" y="663">Guarda el stock por lote:</text>
+  <text class="tx" x="726" y="690">lote:{id_lote}, HASH</text>
+  <text class="tx" x="726" y="717">stock:{id_sucursal}:{id_producto}, ZSET (FEFO)</text>
+  <text class="tx" x="726" y="744">lotes:unidades, ZSET (stock bajo)</text>
+  <text class="tx" x="726" y="771">lotes, SET</text>
+  <text class="gr" x="726" y="806">Garantiza que el script Lua corre sin intercalarse</text>
+  <text class="tx" x="726" y="841">Consultas: q08, q14 y q15</text>
+
+  <!-- Conexiones con los motores -->
+  <line class="doble" x1="544" y1="434" x2="544" y2="550"/>
+  <text class="etqb" x="530" y="472" text-anchor="end">pymongo</text>
+  <text class="etq" x="530" y="494" text-anchor="end">aggregate, vista y</text>
+  <text class="etq" x="530" y="516" text-anchor="end">transacción de la venta</text>
+  <line class="doble" x1="776" y1="434" x2="776" y2="550"/>
+  <text class="etqb" x="790" y="472">redis-py</text>
+  <text class="etq" x="790" y="494">script Lua (FEFO), stock</text>
+  <text class="etq" x="790" y="516">bajo y reposición</text>
+  <line class="sinrel" x1="610" y1="721" x2="710" y2="721"/>
+  <text class="chica" x="660" y="747" text-anchor="middle">sin</text>
+  <text class="chica" x="660" y="766" text-anchor="middle">transacción</text>
+  <text class="chica" x="660" y="785" text-anchor="middle">común</text>
+  <text class="nota" x="40" y="926">Entre los dos motores no hay transacción común: la aplicación descuenta el stock en Redis dentro de la transacción</text>
+  <text class="nota" x="40" y="949">de MongoDB y, si esta no confirma, repone en Redis las unidades que descontó.</text>
+</svg>
