@@ -1,0 +1,11 @@
+id_producto,nombre,principio_activo,categoria,presentacion,condicion_venta,precio_unit,id_proveedor,activo
+PRD014,Clonazepam 2mg x30,Clonazepam,Ansiolítico,Comprimidos x30,Bajo receta archivada,6900,PRV007,True
+PRD015,Enalapril 10mg x30,Enalapril,Antihipertensivo,Comprimidos x30,Bajo receta,4300,PRV006,True
+PRD016,Diclofenac 50mg x15,Diclofenac,Antiinflamatorio,Comprimidos x15,Venta libre,2500,PRV008,True
+PRD017,Cetirizina 10mg x10,Cetirizina,Antihistamínico,Comprimidos x10,Venta libre,2000,PRV009,True
+PRD018,Vitamina C 1g x10,Ácido ascórbico,Vitamina,Comprimidos efervescentes x10,Venta libre,2600,PRV010,True
+PRD019,Azitromicina 500mg x3,Azitromicina,Antibiótico,Comprimidos x3,Bajo receta,8400,PRV008,True
+PRD020,Simvastatina 20mg x30,Simvastatina,Hipolipemiante,Comprimidos x30,Bajo receta,5100,PRV006,True
+PRD021,Dextrometorfano jarabe 120ml,Dextrometorfano,Antitusivo,Jarabe 120 ml,Venta libre,3100,PRV009,False
+PRD022,Sertralina 50mg x30,Sertralina,Antidepresivo,Comprimidos x30,Bajo receta,7700,PRV011,True
+PRD023,Budesonida spray nasal 64mcg,Budesonida,Corticoide nasal,Spray 120 dosis,Bajo receta,7600,PRV012,True

@@ -1,0 +1,11 @@
+id_proveedor,razon_social,cuit,tipo,ciudad,provincia,telefono,activo
+PRV006,Laboratorios del Plata S.A.,30-71402233-4,Laboratorio,Buenos Aires,Buenos Aires,1143106600,True
+PRV007,Droguería Mediterránea S.A.,30-70876543-2,Droguería,Córdoba,Córdoba,3514207700,True
+PRV008,Química Santafesina S.R.L.,30-71223344-8,Laboratorio,Santa Fe,Santa Fe,3424308800,True
+PRV009,Laboratorio Pampeano S.A.,30-71556677-0,Laboratorio,Bahía Blanca,Buenos Aires,2914409900,True
+PRV010,Distribuidora Paraná S.R.L.,30-70664455-6,Droguería,Rosario,Santa Fe,3414501000,False
+PRV011,Laboratorios Serranos S.A.,30-71778899-3,Laboratorio,Córdoba,Córdoba,3514611100,True
+PRV012,Respira Farma S.A.,30-71990011-5,Laboratorio,Pilar,Buenos Aires,2304721200,True
+PRV013,Droguería del Oeste S.R.L.,30-70445566-1,Droguería,Morón,Buenos Aires,1144831300,True
+PRV014,Farmacéutica Rosarina S.A.,30-71334455-9,Laboratorio,Rosario,Santa Fe,3414941400,True
+PRV015,Distribuidora Centro Salud S.A.,30-70112233-7,Droguería,Villa María,Córdoba,3535051500,True
