@@ -1,0 +1,236 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1310" height="1170" viewBox="0 0 1310 1170">
+  <title>Modelo lógico de FarmaRed</title>
+  <defs>
+    <marker id="flecha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#4a5563"/>
+    </marker>
+  </defs>
+  <style>
+    text { font-family: sans-serif; }
+    .fondo { fill: #ffffff; }
+    .caja { fill: #f5f8fc; stroke: #2b4c7e; stroke-width: 2; }
+    .borde { fill: none; stroke: #2b4c7e; stroke-width: 2; }
+    .cab { fill: #2b4c7e; }
+    .tit { font-size: 21px; font-weight: bold; fill: #ffffff; }
+    .at { font-size: 19px; fill: #1d2733; }
+    .pk { font-size: 15px; font-weight: bold; fill: #a3470c; }
+    .fk { font-size: 15px; font-weight: bold; fill: #2f6b3a; }
+    .uq { font-size: 15px; font-weight: bold; fill: #6b3fa0; }
+    .rel { fill: none; stroke: #4a5563; stroke-width: 2; }
+    .opc { fill: none; stroke: #4a5563; stroke-width: 2; stroke-dasharray: 8 6; }
+    .card { font-size: 19px; font-weight: bold; fill: #b42318; }
+    .titulo { font-size: 28px; font-weight: bold; fill: #1d2733; }
+    .sub { font-size: 18px; fill: #4a5563; }
+    .ref { fill: #ffffff; stroke: #9aa5b1; stroke-width: 1.5; }
+    .reftit { font-size: 19px; font-weight: bold; fill: #1d2733; }
+    .reftx { font-size: 17px; fill: #1d2733; }
+    .refcard { font-size: 17px; font-weight: bold; fill: #b42318; }
+  </style>
+  <rect class="fondo" x="0" y="0" width="1310" height="1170"/>
+  <text class="titulo" x="20" y="42">Modelo lógico</text>
+  <text class="sub" x="20" y="72">Nueve entidades con sus atributos y la cardinalidad de cada relación</text>
+
+  <!-- Relaciones -->
+  <line class="rel" x1="282" y1="160" x2="356" y2="160"/>
+  <text class="card" x="289" y="151">1</text>
+  <text class="card" x="349" y="151" text-anchor="end">0..N</text>
+  <line class="rel" x1="618" y1="160" x2="692" y2="160"/>
+  <text class="card" x="625" y="151">1</text>
+  <text class="card" x="685" y="151" text-anchor="end">0..N</text>
+  <line class="rel" x1="954" y1="160" x2="1028" y2="160"/>
+  <text class="card" x="961" y="151">0..N</text>
+  <text class="card" x="1021" y="151" text-anchor="end">1</text>
+  <line class="rel" x1="1159.0" y1="317" x2="1159.0" y2="470"/>
+  <text class="card" x="1168" y="341">1</text>
+  <text class="card" x="1168" y="461">0..N</text>
+  <line class="rel" x1="487.0" y1="371" x2="487.0" y2="470"/>
+  <text class="card" x="496" y="395">1</text>
+  <text class="card" x="496" y="461">0..N</text>
+  <line class="rel" x1="618" y1="530" x2="692" y2="530"/>
+  <text class="card" x="625" y="521">1..N</text>
+  <text class="card" x="685" y="521" text-anchor="end">1</text>
+  <line class="rel" x1="954" y1="530" x2="1028" y2="530"/>
+  <text class="card" x="961" y="521">0..N</text>
+  <text class="card" x="1021" y="521" text-anchor="end">1</text>
+  <line class="rel" x1="863.0" y1="741" x2="863.0" y2="840"/>
+  <text class="card" x="872" y="765">0..N</text>
+  <text class="card" x="872" y="831">1</text>
+  <line class="rel" x1="618" y1="900" x2="692" y2="900"/>
+  <text class="card" x="625" y="891">0..N</text>
+  <text class="card" x="685" y="891" text-anchor="end">1</text>
+  <path class="opc" d="M 762 741 V 790.5 H 487 V 840"/>
+  <text class="card" x="771" y="765">0..N</text>
+  <text class="card" x="496" y="831">0..1</text>
+
+  <!-- Proveedor -->
+  <rect class="caja" x="20" y="100" width="262" height="244" rx="6"/>
+  <path class="cab" d="M 26 100 h 250 a 6 6 0 0 1 6 6 v 32 h -262 v -32 a 6 6 0 0 1 6 -6 z"/>
+  <rect class="borde" x="20" y="100" width="262" height="244" rx="6"/>
+  <text class="tit" x="151" y="127" text-anchor="middle">Proveedor</text>
+  <text class="pk" x="270" y="168" text-anchor="end">PK</text>
+  <text class="at" x="32" y="168">id_proveedor</text>
+  <text class="at" x="32" y="195">razon_social</text>
+  <text class="uq" x="270" y="222" text-anchor="end">único</text>
+  <text class="at" x="32" y="222">cuit</text>
+  <text class="at" x="32" y="249">tipo</text>
+  <text class="at" x="32" y="276">ciudad, provincia</text>
+  <text class="at" x="32" y="303">telefono</text>
+  <text class="at" x="32" y="330">activo</text>
+
+  <!-- Producto -->
+  <rect class="caja" x="356" y="100" width="262" height="271" rx="6"/>
+  <path class="cab" d="M 362 100 h 250 a 6 6 0 0 1 6 6 v 32 h -262 v -32 a 6 6 0 0 1 6 -6 z"/>
+  <rect class="borde" x="356" y="100" width="262" height="271" rx="6"/>
+  <text class="tit" x="487" y="127" text-anchor="middle">Producto</text>
+  <text class="pk" x="606" y="168" text-anchor="end">PK</text>
+  <text class="at" x="368" y="168">id_producto</text>
+  <text class="at" x="368" y="195">nombre</text>
+  <text class="at" x="368" y="222">principio_activo</text>
+  <text class="at" x="368" y="249">categoria, presentacion</text>
+  <text class="at" x="368" y="276">condicion_venta</text>
+  <text class="at" x="368" y="303">precio_unit</text>
+  <text class="fk" x="606" y="330" text-anchor="end">FK</text>
+  <text class="at" x="368" y="330">id_proveedor</text>
+  <text class="at" x="368" y="357">activo</text>
+
+  <!-- Lote de stock -->
+  <rect class="caja" x="692" y="100" width="262" height="217" rx="6"/>
+  <path class="cab" d="M 698 100 h 250 a 6 6 0 0 1 6 6 v 32 h -262 v -32 a 6 6 0 0 1 6 -6 z"/>
+  <rect class="borde" x="692" y="100" width="262" height="217" rx="6"/>
+  <text class="tit" x="823" y="127" text-anchor="middle">Lote de stock</text>
+  <text class="pk" x="942" y="168" text-anchor="end">PK</text>
+  <text class="at" x="704" y="168">id_lote</text>
+  <text class="fk" x="942" y="195" text-anchor="end">FK</text>
+  <text class="at" x="704" y="195">id_producto</text>
+  <text class="fk" x="942" y="222" text-anchor="end">FK</text>
+  <text class="at" x="704" y="222">id_sucursal</text>
+  <text class="at" x="704" y="249">nro_lote</text>
+  <text class="at" x="704" y="276">unidades</text>
+  <text class="at" x="704" y="303">vencimiento</text>
+
+  <!-- Sucursal -->
+  <rect class="caja" x="1028" y="100" width="262" height="217" rx="6"/>
+  <path class="cab" d="M 1034 100 h 250 a 6 6 0 0 1 6 6 v 32 h -262 v -32 a 6 6 0 0 1 6 -6 z"/>
+  <rect class="borde" x="1028" y="100" width="262" height="217" rx="6"/>
+  <text class="tit" x="1159" y="127" text-anchor="middle">Sucursal</text>
+  <text class="pk" x="1278" y="168" text-anchor="end">PK</text>
+  <text class="at" x="1040" y="168">id_sucursal</text>
+  <text class="at" x="1040" y="195">nombre, tipo</text>
+  <text class="at" x="1040" y="222">direccion</text>
+  <text class="at" x="1040" y="249">ciudad, provincia</text>
+  <text class="at" x="1040" y="276">telefono</text>
+  <text class="at" x="1040" y="303">activo</text>
+
+  <!-- Detalle de venta -->
+  <rect class="caja" x="356" y="470" width="262" height="190" rx="6"/>
+  <path class="cab" d="M 362 470 h 250 a 6 6 0 0 1 6 6 v 32 h -262 v -32 a 6 6 0 0 1 6 -6 z"/>
+  <rect class="borde" x="356" y="470" width="262" height="190" rx="6"/>
+  <text class="tit" x="487" y="497" text-anchor="middle">Detalle de venta</text>
+  <text class="pk" x="606" y="538" text-anchor="end">PK</text>
+  <text class="at" x="368" y="538">id_detalle</text>
+  <text class="fk" x="606" y="565" text-anchor="end">FK</text>
+  <text class="at" x="368" y="565">id_venta</text>
+  <text class="fk" x="606" y="592" text-anchor="end">FK</text>
+  <text class="at" x="368" y="592">id_producto</text>
+  <text class="at" x="368" y="619">cantidad</text>
+  <text class="at" x="368" y="646">precio_unit</text>
+
+  <!-- Venta -->
+  <rect class="caja" x="692" y="470" width="262" height="271" rx="6"/>
+  <path class="cab" d="M 698 470 h 250 a 6 6 0 0 1 6 6 v 32 h -262 v -32 a 6 6 0 0 1 6 -6 z"/>
+  <rect class="borde" x="692" y="470" width="262" height="271" rx="6"/>
+  <text class="tit" x="823" y="497" text-anchor="middle">Venta</text>
+  <text class="pk" x="942" y="538" text-anchor="end">PK</text>
+  <text class="at" x="704" y="538">id_venta</text>
+  <text class="fk" x="942" y="565" text-anchor="end">FK</text>
+  <text class="at" x="704" y="565">id_cliente</text>
+  <text class="fk" x="942" y="592" text-anchor="end">FK</text>
+  <text class="at" x="704" y="592">id_farmaceutico</text>
+  <text class="fk" x="942" y="619" text-anchor="end">FK</text>
+  <text class="at" x="704" y="619">id_receta (opcional)</text>
+  <text class="at" x="704" y="646">fecha</text>
+  <text class="at" x="704" y="673">tipo, medio_pago</text>
+  <text class="at" x="704" y="700">total</text>
+  <text class="at" x="704" y="727">estado</text>
+
+  <!-- Farmacéutico -->
+  <rect class="caja" x="1028" y="470" width="262" height="217" rx="6"/>
+  <path class="cab" d="M 1034 470 h 250 a 6 6 0 0 1 6 6 v 32 h -262 v -32 a 6 6 0 0 1 6 -6 z"/>
+  <rect class="borde" x="1028" y="470" width="262" height="217" rx="6"/>
+  <text class="tit" x="1159" y="497" text-anchor="middle">Farmacéutico</text>
+  <text class="pk" x="1278" y="538" text-anchor="end">PK</text>
+  <text class="at" x="1040" y="538">id_farmaceutico</text>
+  <text class="at" x="1040" y="565">nombre, apellido</text>
+  <text class="uq" x="1278" y="592" text-anchor="end">única</text>
+  <text class="at" x="1040" y="592">matricula</text>
+  <text class="at" x="1040" y="619">cargo</text>
+  <text class="fk" x="1278" y="646" text-anchor="end">FK</text>
+  <text class="at" x="1040" y="646">id_sucursal</text>
+  <text class="at" x="1040" y="673">activo</text>
+
+  <!-- Receta -->
+  <rect class="caja" x="356" y="840" width="262" height="298" rx="6"/>
+  <path class="cab" d="M 362 840 h 250 a 6 6 0 0 1 6 6 v 32 h -262 v -32 a 6 6 0 0 1 6 -6 z"/>
+  <rect class="borde" x="356" y="840" width="262" height="298" rx="6"/>
+  <text class="tit" x="487" y="867" text-anchor="middle">Receta</text>
+  <text class="pk" x="606" y="908" text-anchor="end">PK</text>
+  <text class="at" x="368" y="908">id_receta</text>
+  <text class="fk" x="606" y="935" text-anchor="end">FK</text>
+  <text class="at" x="368" y="935">id_cliente</text>
+  <text class="at" x="368" y="962">medico, matricula_medico</text>
+  <text class="at" x="368" y="989">fecha_emision</text>
+  <text class="at" x="368" y="1016">tipo</text>
+  <text class="at" x="368" y="1043">dispensas_autorizadas</text>
+  <text class="at" x="368" y="1070">dispensas_realizadas</text>
+  <text class="at" x="368" y="1097">proxima_dispensa</text>
+  <text class="at" x="368" y="1124">estado</text>
+
+  <!-- Cliente -->
+  <rect class="caja" x="692" y="840" width="262" height="244" rx="6"/>
+  <path class="cab" d="M 698 840 h 250 a 6 6 0 0 1 6 6 v 32 h -262 v -32 a 6 6 0 0 1 6 -6 z"/>
+  <rect class="borde" x="692" y="840" width="262" height="244" rx="6"/>
+  <text class="tit" x="823" y="867" text-anchor="middle">Cliente</text>
+  <text class="pk" x="942" y="908" text-anchor="end">PK</text>
+  <text class="at" x="704" y="908">id_cliente</text>
+  <text class="at" x="704" y="935">nombre, apellido</text>
+  <text class="uq" x="942" y="962" text-anchor="end">único</text>
+  <text class="at" x="704" y="962">dni</text>
+  <text class="at" x="704" y="989">email, telefono</text>
+  <text class="at" x="704" y="1016">ciudad, provincia</text>
+  <text class="at" x="704" y="1043">obra_social, nro_afiliado</text>
+  <text class="at" x="704" y="1070">activo</text>
+
+  <!-- Referencias -->
+  <rect class="ref" x="20" y="470" width="262" height="615" rx="6"/>
+  <text class="reftit" x="34" y="498">Referencias</text>
+  <text class="pk" x="34" y="530">PK</text>
+  <text class="reftx" x="86" y="530">identificador</text>
+  <text class="fk" x="34" y="556">FK</text>
+  <text class="reftx" x="86" y="556">referencia a otra</text>
+  <text class="reftx" x="86" y="577">entidad</text>
+  <text class="uq" x="34" y="603">único</text>
+  <text class="reftx" x="86" y="603">sin repetidos</text>
+  <line class="rel" x1="34" y1="627" x2="74" y2="627"/>
+  <text class="reftx" x="86" y="633">obligatoria</text>
+  <line class="opc" x1="34" y1="653" x2="74" y2="653"/>
+  <text class="reftx" x="86" y="659">opcional</text>
+  <text class="reftit" x="34" y="702">Cardinalidad</text>
+  <text class="reftx" x="34" y="730">Cada extremo dice cuántas</text>
+  <text class="reftx" x="34" y="751">filas de esa entidad se</text>
+  <text class="reftx" x="34" y="772">relacionan con una sola</text>
+  <text class="reftx" x="34" y="793">del otro extremo:</text>
+  <text class="refcard" x="34" y="824">1</text>
+  <text class="reftx" x="86" y="824">exactamente una</text>
+  <text class="refcard" x="34" y="850">0..1</text>
+  <text class="reftx" x="86" y="850">ninguna o una</text>
+  <text class="refcard" x="34" y="876">0..N</text>
+  <text class="reftx" x="86" y="876">ninguna o varias</text>
+  <text class="refcard" x="34" y="902">1..N</text>
+  <text class="reftx" x="86" y="902">una o varias</text>
+  <text class="reftx" x="34" y="942">Ejemplo: un cliente tiene</text>
+  <text class="reftx" x="34" y="963">0..N ventas y cada venta</text>
+  <text class="reftx" x="34" y="984">tiene 1 cliente; una venta</text>
+  <text class="reftx" x="34" y="1005">tiene 1..N detalles.</text>
+  <text class="reftx" x="34" y="1042">Nada se borra: las bajas</text>
+  <text class="reftx" x="34" y="1063">ponen activo en falso.</text>
+</svg>

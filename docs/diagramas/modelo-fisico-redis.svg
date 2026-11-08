@@ -1,0 +1,149 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="1112" viewBox="0 0 1320 1112">
+  <title>Modelo físico en Redis</title>
+  <defs>
+    <marker id="flecha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#4a5563"/>
+    </marker>
+  </defs>
+  <style>
+    text { font-family: sans-serif; }
+    .fondo { fill: #ffffff; }
+    .caja { fill: #fdf6f5; stroke: #9b2226; stroke-width: 2; }
+    .borde { fill: none; stroke: #9b2226; stroke-width: 2; }
+    .cab { fill: #9b2226; }
+    .clave { font-size: 23px; font-weight: bold; fill: #ffffff; }
+    .tipo { fill: #ffffff; }
+    .tipotx { font-size: 16px; font-weight: bold; fill: #9b2226; }
+    .desc { font-size: 19px; fill: #1d2733; }
+    .ej { font-size: 18px; font-weight: bold; fill: #1d2733; }
+    .tabla { fill: #ffffff; stroke: #d6c3c1; stroke-width: 1.5; }
+    .campo { font-size: 19px; fill: #5f6b7a; }
+    .valor { font-size: 19px; fill: #1d2733; }
+    .colcab { font-size: 16px; font-weight: bold; fill: #5f6b7a; }
+    .nota { font-size: 17px; font-style: italic; fill: #4a5563; }
+    .flecha { fill: none; stroke: #4a5563; stroke-width: 2; marker-end: url(#flecha); }
+    .etq { font-size: 16px; font-weight: bold; fill: #4a5563; }
+    .titulo { font-size: 28px; font-weight: bold; fill: #1d2733; }
+    .sub { font-size: 18px; fill: #4a5563; }
+    .ops { fill: #f7f8fa; stroke: #9aa5b1; stroke-width: 1.5; }
+    .sep { stroke: #d5dae0; stroke-width: 1; }
+    .opstit { font-size: 20px; font-weight: bold; fill: #1d2733; }
+    .op { font-size: 17px; font-weight: bold; fill: #1d2733; }
+    .cmd { font-size: 17px; fill: #1d2733; }
+  </style>
+  <rect class="fondo" x="0" y="0" width="1320" height="1112"/>
+  <text class="titulo" x="20" y="42">Modelo físico en Redis</text>
+  <text class="sub" x="20" y="72">Stock por lote, fuente de verdad. Redis standalone con persistencia AOF (appendfsync everysec).</text>
+
+  <!-- lote:{id_lote} -->
+  <rect class="caja" x="20" y="100" width="600" height="332" rx="6"/>
+  <path class="cab" d="M 26 100 h 588 a 6 6 0 0 1 6 6 v 40 h -600 v -40 a 6 6 0 0 1 6 -6 z"/>
+  <text class="clave" x="36" y="131">lote:{id_lote}</text>
+  <rect class="tipo" x="516" y="110" width="88" height="26" rx="13"/>
+  <text class="tipotx" x="560" y="129" text-anchor="middle">HASH</text>
+  <text class="desc" x="36" y="178">Un hash por lote con sus datos y las unidades disponibles.</text>
+  <text class="desc" x="36" y="204">Es la fuente de verdad del stock.</text>
+  <text class="ej" x="36" y="238">Ejemplo: lote:L005</text>
+  <rect class="tabla" x="36" y="250" width="568" height="164" rx="4"/>
+  <text class="campo" x="52" y="278">id_producto</text>
+  <text class="valor" x="236" y="278">PRD003</text>
+  <text class="campo" x="52" y="308">id_sucursal</text>
+  <text class="valor" x="236" y="308">S001</text>
+  <text class="campo" x="52" y="338">nro_lote</text>
+  <text class="valor" x="236" y="338">L-2506A</text>
+  <text class="campo" x="52" y="368">unidades</text>
+  <text class="valor" x="236" y="368">40</text>
+  <text class="nota" x="406" y="368">entero</text>
+  <text class="campo" x="52" y="398">vencimiento</text>
+  <text class="valor" x="236" y="398">2026-11-30</text>
+  <rect class="caja" x="700" y="100" width="600" height="332" rx="6"/>
+  <path class="cab" d="M 706 100 h 588 a 6 6 0 0 1 6 6 v 40 h -600 v -40 a 6 6 0 0 1 6 -6 z"/>
+  <text class="nota" x="406" y="398">AAAA-MM-DD</text>
+
+  <!-- stock:{id_sucursal}:{id_producto} -->
+  <text class="clave" x="716" y="131">stock:{id_sucursal}:{id_producto}</text>
+  <rect class="tipo" x="1196" y="110" width="88" height="26" rx="13"/>
+  <text class="tipotx" x="1240" y="129" text-anchor="middle">ZSET</text>
+  <text class="desc" x="716" y="178">Lotes de un producto en una sucursal, en orden FEFO.</text>
+  <text class="desc" x="716" y="204">miembro: id_lote; score: vencimiento como AAAAMMDD.</text>
+  <text class="ej" x="716" y="238">Ejemplo: stock:S001:PRD003</text>
+  <rect class="tabla" x="716" y="250" width="568" height="104" rx="4"/>
+  <text class="colcab" x="732" y="278">miembro</text>
+  <text class="colcab" x="886" y="278">score</text>
+  <text class="colcab" x="1066" y="278">vence</text>
+  <text class="valor" x="732" y="308">L005</text>
+  <text class="valor" x="886" y="308">20261130</text>
+  <text class="campo" x="1066" y="308">30/11/2026</text>
+  <text class="valor" x="732" y="338">L015</text>
+  <text class="valor" x="886" y="338">20270630</text>
+  <text class="campo" x="1066" y="338">30/06/2027</text>
+  <text class="nota" x="716" y="384">El script lee desde el score de hoy hacia arriba,</text>
+  <text class="nota" x="716" y="408">así los lotes vencidos nunca se consideran.</text>
+  <rect class="borde" x="20" y="100" width="600" height="332" rx="6"/>
+  <rect class="borde" x="700" y="100" width="600" height="332" rx="6"/>
+
+  <!-- lotes -->
+  <rect class="caja" x="20" y="502" width="600" height="302" rx="6"/>
+  <path class="cab" d="M 26 502 h 588 a 6 6 0 0 1 6 6 v 40 h -600 v -40 a 6 6 0 0 1 6 -6 z"/>
+  <text class="clave" x="36" y="533">lotes</text>
+  <rect class="tipo" x="516" y="512" width="88" height="26" rx="13"/>
+  <text class="tipotx" x="560" y="531" text-anchor="middle">SET</text>
+  <text class="desc" x="36" y="580">Conjunto con todos los id_lote cargados.</text>
+  <text class="desc" x="36" y="606">Lo escribe la carga junto con las demás claves.</text>
+  <text class="ej" x="36" y="640">Ejemplo</text>
+  <rect class="tabla" x="36" y="652" width="568" height="44" rx="4"/>
+  <text class="valor" x="52" y="680">L001, L002, L003, …</text>
+  <text class="nota" x="286" y="680">un miembro por lote cargado</text>
+  <text class="nota" x="36" y="726">La carga borra lote:* y stock:* con SCAN y UNLINK,</text>
+  <rect class="caja" x="700" y="502" width="600" height="302" rx="6"/>
+  <path class="cab" d="M 706 502 h 588 a 6 6 0 0 1 6 6 v 40 h -600 v -40 a 6 6 0 0 1 6 -6 z"/>
+  <text class="nota" x="36" y="750">y lotes y lotes:unidades por nombre; nunca FLUSHDB.</text>
+
+  <!-- lotes:unidades -->
+  <text class="clave" x="716" y="533">lotes:unidades</text>
+  <rect class="tipo" x="1196" y="512" width="88" height="26" rx="13"/>
+  <text class="tipotx" x="1240" y="531" text-anchor="middle">ZSET</text>
+  <text class="desc" x="716" y="580">Todos los lotes ordenados por unidades disponibles.</text>
+  <text class="desc" x="716" y="606">miembro: id_lote; score: unidades. Índice del stock bajo.</text>
+  <text class="ej" x="716" y="640">Ejemplo con los datos provistos (los tres más bajos)</text>
+  <rect class="tabla" x="716" y="652" width="568" height="134" rx="4"/>
+  <text class="colcab" x="732" y="680">miembro</text>
+  <text class="colcab" x="886" y="680">score</text>
+  <text class="valor" x="732" y="710">L010</text>
+  <text class="valor" x="886" y="710">12</text>
+  <text class="valor" x="732" y="740">L018</text>
+  <text class="valor" x="886" y="740">15</text>
+  <text class="valor" x="732" y="770">L003</text>
+  <text class="valor" x="886" y="770">18</text>
+  <rect class="borde" x="20" y="502" width="600" height="302" rx="6"/>
+  <rect class="borde" x="700" y="502" width="600" height="302" rx="6"/>
+
+  <!-- Los miembros de los conjuntos apuntan al hash del lote -->
+  <line class="flecha" x1="700" y1="280" x2="623" y2="280"/>
+  <text class="etq" x="660" y="270" text-anchor="middle">id_lote</text>
+  <path class="flecha" d="M 700 652 H 660 V 370 H 623"/>
+  <rect class="fondo" x="626" y="453" width="68" height="24"/>
+  <text class="etq" x="660" y="471" text-anchor="middle">id_lote</text>
+  <line class="flecha" x1="320" y1="502" x2="320" y2="435"/>
+  <text class="etq" x="332" y="473">id_lote</text>
+
+  <!-- Operaciones -->
+  <text class="opstit" x="20" y="866">Quién usa cada clave</text>
+  <rect class="ops" x="20" y="880" width="1280" height="180" rx="6"/>
+  <line class="sep" x1="20" y1="916" x2="1300" y2="916"/>
+  <line class="sep" x1="20" y1="952" x2="1300" y2="952"/>
+  <line class="sep" x1="20" y1="988" x2="1300" y2="988"/>
+  <line class="sep" x1="20" y1="1024" x2="1300" y2="1024"/>
+  <line class="sep" x1="400" y1="880" x2="400" y2="1060"/>
+  <text class="op" x="36" y="904">Descuento FEFO (script Lua, atómico)</text>
+  <text class="cmd" x="416" y="904">ZRANGE stock:… BYSCORE desde hoy; HGET y HINCRBY lote:…; ZINCRBY lotes:unidades</text>
+  <text class="op" x="36" y="940">Producto de cada lote (stock.py)</text>
+  <text class="cmd" x="416" y="940">HGET lote:… id_producto en un pipeline, después del script; si falla, repone</text>
+  <text class="op" x="36" y="976">Reposición (compensación)</text>
+  <text class="cmd" x="416" y="976">MULTI con HINCRBY lote:… unidades y ZINCRBY lotes:unidades</text>
+  <text class="op" x="36" y="1012">Lotes con stock bajo (q08)</text>
+  <text class="cmd" x="416" y="1012">ZRANGE lotes:unidades -inf (50 BYSCORE; HGETALL de cada lote:…</text>
+  <text class="op" x="36" y="1048">Carga</text>
+  <text class="cmd" x="416" y="1048">SCAN y UNLINK por patrón; HSET, ZADD y SADD en un MULTI</text>
+  <text class="nota" x="20" y="1090">El script toca lote:… y lotes:unidades sin declararlas en KEYS: es válido en Redis standalone, no en Redis Cluster.</text>
+</svg>
