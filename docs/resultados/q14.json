@@ -1,0 +1,473 @@
+{
+  "generado": "2026-11-08",
+  "parametros": {
+    "venta con receta de tratamiento prolongado (última dispensa)": {
+      "id_cliente": "C003",
+      "id_farmaceutico": "F006",
+      "items": [
+        {
+          "id_producto": "PRD004",
+          "cantidad": 1
+        }
+      ],
+      "medio_pago": "Obra social",
+      "id_receta": "RC002"
+    },
+    "venta con receta de tratamiento prolongado (dispensa intermedia)": {
+      "id_cliente": "C006",
+      "id_farmaceutico": "F001",
+      "items": [
+        {
+          "id_producto": "PRD003",
+          "cantidad": 1
+        }
+      ],
+      "medio_pago": "Obra social",
+      "id_receta": "RC004"
+    },
+    "rechazo por cliente inactivo": {
+      "id_cliente": "C008",
+      "id_farmaceutico": "F001",
+      "items": [
+        {
+          "id_producto": "PRD001",
+          "cantidad": 1
+        }
+      ],
+      "medio_pago": "Efectivo",
+      "id_receta": null
+    },
+    "rechazo por stock: el único lote del producto en la sucursal está vencido": {
+      "id_cliente": "C007",
+      "id_farmaceutico": "F003",
+      "items": [
+        {
+          "id_producto": "PRD010",
+          "cantidad": 1
+        }
+      ],
+      "medio_pago": "Débito",
+      "id_receta": "RC006"
+    }
+  },
+  "resultado": [
+    {
+      "escenario": "venta con receta de tratamiento prolongado (última dispensa)",
+      "antes": {
+        "cliente": {
+          "id_cliente": "C003",
+          "nombre": "Carla",
+          "apellido": "Ruiz",
+          "obra_social": "PAMI",
+          "activo": true
+        },
+        "receta": {
+          "id_receta": "RC002",
+          "id_cliente": "C003",
+          "tipo": "Tratamiento prolongado",
+          "estado": "Vigente",
+          "dispensas_autorizadas": 3,
+          "dispensas_realizadas": 2,
+          "proxima_dispensa": "2026-09-15",
+          "medico": "Dra. Silvia Montenegro",
+          "matricula_medico": "MP-39877",
+          "fecha_emision": "2026-07-15"
+        },
+        "lotes": [
+          {
+            "id_lote": "L007",
+            "id_producto": "PRD004",
+            "unidades": 22,
+            "vencimiento": "2027-02-28"
+          }
+        ],
+        "contadores": {
+          "detalle_ventas": 39,
+          "ventas": 31
+        },
+        "venta_nueva": null
+      },
+      "despues": {
+        "cliente": {
+          "id_cliente": "C003",
+          "nombre": "Carla",
+          "apellido": "Ruiz",
+          "obra_social": "PAMI",
+          "activo": true
+        },
+        "receta": {
+          "id_receta": "RC002",
+          "id_cliente": "C003",
+          "tipo": "Tratamiento prolongado",
+          "estado": "Completada",
+          "dispensas_autorizadas": 3,
+          "dispensas_realizadas": 3,
+          "proxima_dispensa": null,
+          "medico": "Dra. Silvia Montenegro",
+          "matricula_medico": "MP-39877",
+          "fecha_emision": "2026-07-15"
+        },
+        "lotes": [
+          {
+            "id_lote": "L007",
+            "id_producto": "PRD004",
+            "unidades": 21,
+            "vencimiento": "2027-02-28"
+          }
+        ],
+        "contadores": {
+          "detalle_ventas": 40,
+          "ventas": 32
+        },
+        "venta_nueva": {
+          "id_venta": "V032",
+          "id_cliente": "C003",
+          "id_farmaceutico": "F006",
+          "id_receta": "RC002",
+          "fecha": "2026-11-08",
+          "tipo": "Con receta",
+          "medio_pago": "Obra social",
+          "total": 6200,
+          "estado": "Completada",
+          "items": [
+            {
+              "id_detalle": "D040",
+              "id_producto": "PRD004",
+              "cantidad": 1,
+              "precio_unit": 6200
+            }
+          ],
+          "stock_descontado": true,
+          "consumos": [
+            {
+              "id_lote": "L007",
+              "id_producto": "PRD004",
+              "unidades": 1
+            }
+          ]
+        }
+      },
+      "resultado": {
+        "venta": {
+          "id_venta": "V032",
+          "id_cliente": "C003",
+          "id_farmaceutico": "F006",
+          "id_receta": "RC002",
+          "fecha": "2026-11-08",
+          "tipo": "Con receta",
+          "medio_pago": "Obra social",
+          "total": 6200,
+          "estado": "Completada",
+          "items": [
+            {
+              "id_detalle": "D040",
+              "id_producto": "PRD004",
+              "cantidad": 1,
+              "precio_unit": 6200
+            }
+          ],
+          "stock_descontado": true,
+          "consumos": [
+            {
+              "id_lote": "L007",
+              "id_producto": "PRD004",
+              "unidades": 1
+            }
+          ]
+        },
+        "receta": {
+          "id_receta": "RC002",
+          "dispensas_realizadas": 3,
+          "estado": "Completada",
+          "proxima_dispensa": null
+        },
+        "consumos": [
+          {
+            "id_lote": "L007",
+            "id_producto": "PRD004",
+            "unidades": 1
+          }
+        ]
+      }
+    },
+    {
+      "escenario": "venta con receta de tratamiento prolongado (dispensa intermedia)",
+      "antes": {
+        "cliente": {
+          "id_cliente": "C006",
+          "nombre": "Ricardo",
+          "apellido": "Paz",
+          "obra_social": "PAMI",
+          "activo": true
+        },
+        "receta": {
+          "id_receta": "RC004",
+          "id_cliente": "C006",
+          "tipo": "Tratamiento prolongado",
+          "estado": "Vigente",
+          "dispensas_autorizadas": 3,
+          "dispensas_realizadas": 1,
+          "proxima_dispensa": "2026-10-20",
+          "medico": "Dr. Pablo Echeverría",
+          "matricula_medico": "MP-41203",
+          "fecha_emision": "2026-09-20"
+        },
+        "lotes": [
+          {
+            "id_lote": "L005",
+            "id_producto": "PRD003",
+            "unidades": 40,
+            "vencimiento": "2026-11-30"
+          },
+          {
+            "id_lote": "L015",
+            "id_producto": "PRD003",
+            "unidades": 100,
+            "vencimiento": "2027-06-30"
+          }
+        ],
+        "contadores": {
+          "detalle_ventas": 40,
+          "ventas": 32
+        },
+        "venta_nueva": null
+      },
+      "despues": {
+        "cliente": {
+          "id_cliente": "C006",
+          "nombre": "Ricardo",
+          "apellido": "Paz",
+          "obra_social": "PAMI",
+          "activo": true
+        },
+        "receta": {
+          "id_receta": "RC004",
+          "id_cliente": "C006",
+          "tipo": "Tratamiento prolongado",
+          "estado": "Vigente",
+          "dispensas_autorizadas": 3,
+          "dispensas_realizadas": 2,
+          "proxima_dispensa": "2026-12-08",
+          "medico": "Dr. Pablo Echeverría",
+          "matricula_medico": "MP-41203",
+          "fecha_emision": "2026-09-20"
+        },
+        "lotes": [
+          {
+            "id_lote": "L005",
+            "id_producto": "PRD003",
+            "unidades": 39,
+            "vencimiento": "2026-11-30"
+          },
+          {
+            "id_lote": "L015",
+            "id_producto": "PRD003",
+            "unidades": 100,
+            "vencimiento": "2027-06-30"
+          }
+        ],
+        "contadores": {
+          "detalle_ventas": 41,
+          "ventas": 33
+        },
+        "venta_nueva": {
+          "id_venta": "V033",
+          "id_cliente": "C006",
+          "id_farmaceutico": "F001",
+          "id_receta": "RC004",
+          "fecha": "2026-11-08",
+          "tipo": "Con receta",
+          "medio_pago": "Obra social",
+          "total": 9800,
+          "estado": "Completada",
+          "items": [
+            {
+              "id_detalle": "D041",
+              "id_producto": "PRD003",
+              "cantidad": 1,
+              "precio_unit": 9800
+            }
+          ],
+          "stock_descontado": true,
+          "consumos": [
+            {
+              "id_lote": "L005",
+              "id_producto": "PRD003",
+              "unidades": 1
+            }
+          ]
+        }
+      },
+      "resultado": {
+        "venta": {
+          "id_venta": "V033",
+          "id_cliente": "C006",
+          "id_farmaceutico": "F001",
+          "id_receta": "RC004",
+          "fecha": "2026-11-08",
+          "tipo": "Con receta",
+          "medio_pago": "Obra social",
+          "total": 9800,
+          "estado": "Completada",
+          "items": [
+            {
+              "id_detalle": "D041",
+              "id_producto": "PRD003",
+              "cantidad": 1,
+              "precio_unit": 9800
+            }
+          ],
+          "stock_descontado": true,
+          "consumos": [
+            {
+              "id_lote": "L005",
+              "id_producto": "PRD003",
+              "unidades": 1
+            }
+          ]
+        },
+        "receta": {
+          "id_receta": "RC004",
+          "dispensas_realizadas": 2,
+          "estado": "Vigente",
+          "proxima_dispensa": "2026-12-08"
+        },
+        "consumos": [
+          {
+            "id_lote": "L005",
+            "id_producto": "PRD003",
+            "unidades": 1
+          }
+        ]
+      }
+    },
+    {
+      "escenario": "rechazo por cliente inactivo",
+      "antes": {
+        "cliente": {
+          "id_cliente": "C008",
+          "nombre": "Hugo",
+          "apellido": "Mansilla",
+          "obra_social": "Sin cobertura",
+          "activo": false
+        },
+        "receta": null,
+        "lotes": [
+          {
+            "id_lote": "L001",
+            "id_producto": "PRD001",
+            "unidades": 120,
+            "vencimiento": "2027-08-31"
+          }
+        ],
+        "contadores": {
+          "detalle_ventas": 41,
+          "ventas": 33
+        },
+        "venta_nueva": null
+      },
+      "despues": {
+        "cliente": {
+          "id_cliente": "C008",
+          "nombre": "Hugo",
+          "apellido": "Mansilla",
+          "obra_social": "Sin cobertura",
+          "activo": false
+        },
+        "receta": null,
+        "lotes": [
+          {
+            "id_lote": "L001",
+            "id_producto": "PRD001",
+            "unidades": 120,
+            "vencimiento": "2027-08-31"
+          }
+        ],
+        "contadores": {
+          "detalle_ventas": 41,
+          "ventas": 33
+        },
+        "venta_nueva": null
+      },
+      "error": {
+        "codigo": "CLIENTE_INACTIVO",
+        "mensaje": "el cliente C008 está dado de baja"
+      }
+    },
+    {
+      "escenario": "rechazo por stock: el único lote del producto en la sucursal está vencido",
+      "antes": {
+        "cliente": {
+          "id_cliente": "C007",
+          "nombre": "Julieta",
+          "apellido": "Cabrera",
+          "obra_social": "Galeno",
+          "activo": true
+        },
+        "receta": {
+          "id_receta": "RC006",
+          "id_cliente": "C007",
+          "tipo": "Simple",
+          "estado": "Vigente",
+          "dispensas_autorizadas": 1,
+          "dispensas_realizadas": 0,
+          "proxima_dispensa": null,
+          "medico": "Dr. Gustavo Ramírez",
+          "matricula_medico": "MP-47766",
+          "fecha_emision": "2026-10-05"
+        },
+        "lotes": [
+          {
+            "id_lote": "L012",
+            "id_producto": "PRD010",
+            "unidades": 30,
+            "vencimiento": "2026-10-31"
+          }
+        ],
+        "contadores": {
+          "detalle_ventas": 41,
+          "ventas": 33
+        },
+        "venta_nueva": null
+      },
+      "despues": {
+        "cliente": {
+          "id_cliente": "C007",
+          "nombre": "Julieta",
+          "apellido": "Cabrera",
+          "obra_social": "Galeno",
+          "activo": true
+        },
+        "receta": {
+          "id_receta": "RC006",
+          "id_cliente": "C007",
+          "tipo": "Simple",
+          "estado": "Vigente",
+          "dispensas_autorizadas": 1,
+          "dispensas_realizadas": 0,
+          "proxima_dispensa": null,
+          "medico": "Dr. Gustavo Ramírez",
+          "matricula_medico": "MP-47766",
+          "fecha_emision": "2026-10-05"
+        },
+        "lotes": [
+          {
+            "id_lote": "L012",
+            "id_producto": "PRD010",
+            "unidades": 30,
+            "vencimiento": "2026-10-31"
+          }
+        ],
+        "contadores": {
+          "detalle_ventas": 41,
+          "ventas": 33
+        },
+        "venta_nueva": null
+      },
+      "error": {
+        "codigo": "STOCK_INSUFICIENTE",
+        "mensaje": "stock insuficiente de PRD010: se piden 1, hay 0 vigentes"
+      }
+    }
+  ]
+}

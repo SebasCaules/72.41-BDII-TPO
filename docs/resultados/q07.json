@@ -1,0 +1,33 @@
+{
+  "generado": "2026-11-08",
+  "parametros": {
+    "limite": 5
+  },
+  "resultado": [
+    {
+      "id_producto": "PRD005",
+      "nombre": "Metformina 850mg x60",
+      "unidades": 6
+    },
+    {
+      "id_producto": "PRD011",
+      "nombre": "Loratadina 10mg x10",
+      "unidades": 6
+    },
+    {
+      "id_producto": "PRD001",
+      "nombre": "Paracetamol 500mg x30",
+      "unidades": 4
+    },
+    {
+      "id_producto": "PRD004",
+      "nombre": "Losartán 50mg x30",
+      "unidades": 3
+    },
+    {
+      "id_producto": "PRD009",
+      "nombre": "Levotiroxina 100mcg x50",
+      "unidades": 3
+    }
+  ]
+}

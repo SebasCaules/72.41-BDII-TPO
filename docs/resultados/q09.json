@@ -1,0 +1,53 @@
+{
+  "generado": "2026-11-08",
+  "parametros": {
+    "monto": 5000
+  },
+  "resultado": [
+    {
+      "id_venta": "V013",
+      "fecha": "2026-10-02",
+      "id_cliente": "C001",
+      "id_farmaceutico": "F001",
+      "total": 4400,
+      "estado": "Completada",
+      "medio_pago": "Efectivo"
+    },
+    {
+      "id_venta": "V014",
+      "fecha": "2026-10-05",
+      "id_cliente": "C005",
+      "id_farmaceutico": "F005",
+      "total": 4600,
+      "estado": "Completada",
+      "medio_pago": "Efectivo"
+    },
+    {
+      "id_venta": "V030",
+      "fecha": "2026-10-10",
+      "id_cliente": "C022",
+      "id_farmaceutico": "F018",
+      "total": 4200,
+      "estado": "Completada",
+      "medio_pago": "Transferencia"
+    },
+    {
+      "id_venta": "V025",
+      "fecha": "2026-10-28",
+      "id_cliente": "C021",
+      "id_farmaceutico": "F015",
+      "total": 4000,
+      "estado": "Pendiente",
+      "medio_pago": "Efectivo"
+    },
+    {
+      "id_venta": "V031",
+      "fecha": "2026-11-02",
+      "id_cliente": "C015",
+      "id_farmaceutico": "F008",
+      "total": 2600,
+      "estado": "Completada",
+      "medio_pago": "Débito"
+    }
+  ]
+}

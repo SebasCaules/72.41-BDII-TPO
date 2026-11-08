@@ -1,0 +1,24 @@
+{
+  "generado": "2026-11-08",
+  "parametros": {
+    "id_sucursal": "S001"
+  },
+  "resultado": [
+    {
+      "id_cliente": "C001",
+      "nombre": "Lucía",
+      "apellido": "Fernández",
+      "dni": "31245678",
+      "activo": true,
+      "cantidad_ventas": 3
+    },
+    {
+      "id_cliente": "C006",
+      "nombre": "Ricardo",
+      "apellido": "Paz",
+      "dni": "14876543",
+      "activo": true,
+      "cantidad_ventas": 4
+    }
+  ]
+}

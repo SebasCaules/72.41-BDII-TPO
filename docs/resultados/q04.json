@@ -1,0 +1,30 @@
+{
+  "generado": "2026-11-08",
+  "parametros": {},
+  "resultado": [
+    {
+      "id_cliente": "C014",
+      "nombre": "Norma",
+      "apellido": "Castillo",
+      "cantidad_recetas": 3
+    },
+    {
+      "id_cliente": "C001",
+      "nombre": "Lucía",
+      "apellido": "Fernández",
+      "cantidad_recetas": 2
+    },
+    {
+      "id_cliente": "C002",
+      "nombre": "Martín",
+      "apellido": "Gómez",
+      "cantidad_recetas": 2
+    },
+    {
+      "id_cliente": "C006",
+      "nombre": "Ricardo",
+      "apellido": "Paz",
+      "cantidad_recetas": 2
+    }
+  ]
+}

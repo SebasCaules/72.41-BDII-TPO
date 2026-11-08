@@ -1,0 +1,91 @@
+{
+  "generado": "2026-11-08",
+  "parametros": {},
+  "resultado": [
+    {
+      "id_venta": "V012",
+      "fecha": "2026-10-11",
+      "id_cliente": "C002",
+      "tipo": "Venta libre",
+      "total": 9200,
+      "farmaceutico": {
+        "id_farmaceutico": "F005",
+        "nombre": "Natalia",
+        "apellido": "Giménez",
+        "matricula": "MN-18289"
+      },
+      "sucursal": {
+        "id_sucursal": "S003",
+        "nombre": "Farmacia Rosario Centro"
+      }
+    },
+    {
+      "id_venta": "V011",
+      "fecha": "2026-10-12",
+      "id_cliente": "C007",
+      "tipo": "Con receta",
+      "total": 4800,
+      "farmaceutico": {
+        "id_farmaceutico": "F006",
+        "nombre": "Matías",
+        "apellido": "Sandoval",
+        "matricula": "MN-18340"
+      },
+      "sucursal": {
+        "id_sucursal": "S004",
+        "nombre": "Farmacia Nueva Córdoba"
+      }
+    },
+    {
+      "id_venta": "V025",
+      "fecha": "2026-10-28",
+      "id_cliente": "C021",
+      "tipo": "Venta libre",
+      "total": 4000,
+      "farmaceutico": {
+        "id_farmaceutico": "F015",
+        "nombre": "Silvina",
+        "apellido": "Rojas",
+        "matricula": "MN-18581"
+      },
+      "sucursal": {
+        "id_sucursal": "S012",
+        "nombre": "Farmacia Quilmes"
+      }
+    },
+    {
+      "id_venta": "V024",
+      "fecha": "2026-10-30",
+      "id_cliente": "C016",
+      "tipo": "Venta libre",
+      "total": 7500,
+      "farmaceutico": {
+        "id_farmaceutico": "F008",
+        "nombre": "Lorena",
+        "apellido": "Vega",
+        "matricula": "MN-18455"
+      },
+      "sucursal": {
+        "id_sucursal": "S006",
+        "nombre": "Farmacia Caballito"
+      }
+    },
+    {
+      "id_venta": "V023",
+      "fecha": "2026-10-31",
+      "id_cliente": "C019",
+      "tipo": "Con receta",
+      "total": 8400,
+      "farmaceutico": {
+        "id_farmaceutico": "F012",
+        "nombre": "Verónica",
+        "apellido": "Aguirre",
+        "matricula": "MN-18537"
+      },
+      "sucursal": {
+        "id_sucursal": "S010",
+        "nombre": "Farmacia Santa Fe Capital"
+      }
+    }
+  ]
+}

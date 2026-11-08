@@ -1,0 +1,102 @@
+{
+  "generado": "2026-11-08",
+  "parametros": {
+    "id_cliente": "C001"
+  },
+  "resultado": [
+    {
+      "registro": "receta",
+      "id": "RC001",
+      "fecha": "2026-09-10",
+      "tipo": "Simple",
+      "estado": "Completada",
+      "medico": "Dr. Alejandro Vidal",
+      "dispensas_autorizadas": 1,
+      "dispensas_realizadas": 1,
+      "proxima_dispensa": null
+    },
+    {
+      "registro": "venta",
+      "id": "V003",
+      "fecha": "2026-09-10",
+      "tipo": "Con receta",
+      "estado": "Completada",
+      "total": 9800,
+      "id_receta": "RC001",
+      "id_farmaceutico": "F001",
+      "items": [
+        {
+          "id_detalle": "D004",
+          "id_producto": "PRD003",
+          "cantidad": 1,
+          "precio_unit": 9800
+        }
+      ]
+    },
+    {
+      "registro": "venta",
+      "id": "V015",
+      "fecha": "2026-09-25",
+      "tipo": "Venta libre",
+      "estado": "Anulada",
+      "total": 3500,
+      "id_receta": null,
+      "id_farmaceutico": "F002",
+      "items": [
+        {
+          "id_detalle": "D020",
+          "id_producto": "PRD002",
+          "cantidad": 1,
+          "precio_unit": 3500
+        }
+      ]
+    },
+    {
+      "registro": "venta",
+      "id": "V013",
+      "fecha": "2026-10-02",
+      "tipo": "Venta libre",
+      "estado": "Completada",
+      "total": 4400,
+      "id_receta": null,
+      "id_farmaceutico": "F001",
+      "items": [
+        {
+          "id_detalle": "D017",
+          "id_producto": "PRD011",
+          "cantidad": 2,
+          "precio_unit": 2200
+        }
+      ]
+    },
+    {
+      "registro": "receta",
+      "id": "RC008",
+      "fecha": "2026-10-08",
+      "tipo": "Simple",
+      "estado": "Completada",
+      "medico": "Dra. Mónica Salas",
+      "dispensas_autorizadas": 1,
+      "dispensas_realizadas": 1,
+      "proxima_dispensa": null
+    },
+    {
+      "registro": "venta",
+      "id": "V010",
+      "fecha": "2026-10-08",
+      "tipo": "Con receta",
+      "estado": "Completada",
+      "total": 7100,
+      "id_receta": "RC008",
+      "id_farmaceutico": "F003",
+      "items": [
+        {
+          "id_detalle": "D013",
+          "id_producto": "PRD010",
+          "cantidad": 1,
+          "precio_unit": 7100
+        }
+      ]
+    }
+  ]
+}

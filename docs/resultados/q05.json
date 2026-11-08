@@ -1,0 +1,136 @@
+{
+  "generado": "2026-11-08",
+  "parametros": {
+    "dias": 60
+  },
+  "resultado": [
+    {
+      "id_farmaceutico": "F005",
+      "nombre": "Natalia",
+      "apellido": "Giménez",
+      "matricula": "MN-18289",
+      "id_sucursal": "S003",
+      "cantidad_ventas": 3
+    },
+    {
+      "id_farmaceutico": "F008",
+      "nombre": "Lorena",
+      "apellido": "Vega",
+      "matricula": "MN-18455",
+      "id_sucursal": "S006",
+      "cantidad_ventas": 3
+    },
+    {
+      "id_farmaceutico": "F010",
+      "nombre": "Paula",
+      "apellido": "Ibarra",
+      "matricula": "MN-18503",
+      "id_sucursal": "S008",
+      "cantidad_ventas": 3
+    },
+    {
+      "id_farmaceutico": "F001",
+      "nombre": "Mariana",
+      "apellido": "Quiroga",
+      "matricula": "MN-18041",
+      "id_sucursal": "S001",
+      "cantidad_ventas": 2
+    },
+    {
+      "id_farmaceutico": "F002",
+      "nombre": "Sebastián",
+      "apellido": "Ledesma",
+      "matricula": "MN-18078",
+      "id_sucursal": "S001",
+      "cantidad_ventas": 2
+    },
+    {
+      "id_farmaceutico": "F003",
+      "nombre": "Carolina",
+      "apellido": "Benítez",
+      "matricula": "MN-18112",
+      "id_sucursal": "S002",
+      "cantidad_ventas": 1
+    },
+    {
+      "id_farmaceutico": "F006",
+      "nombre": "Matías",
+      "apellido": "Sandoval",
+      "matricula": "MN-18340",
+      "id_sucursal": "S004",
+      "cantidad_ventas": 1
+    },
+    {
+      "id_farmaceutico": "F009",
+      "nombre": "Diego",
+      "apellido": "Ferreyra",
+      "matricula": "MN-18472",
+      "id_sucursal": "S007",
+      "cantidad_ventas": 1
+    },
+    {
+      "id_farmaceutico": "F012",
+      "nombre": "Verónica",
+      "apellido": "Aguirre",
+      "matricula": "MN-18537",
+      "id_sucursal": "S010",
+      "cantidad_ventas": 1
+    },
+    {
+      "id_farmaceutico": "F015",
+      "nombre": "Silvina",
+      "apellido": "Rojas",
+      "matricula": "MN-18581",
+      "id_sucursal": "S012",
+      "cantidad_ventas": 1
+    },
+    {
+      "id_farmaceutico": "F017",
+      "nombre": "Cecilia",
+      "apellido": "Funes",
+      "matricula": "MN-18619",
+      "id_sucursal": "S014",
+      "cantidad_ventas": 1
+    },
+    {
+      "id_farmaceutico": "F018",
+      "nombre": "Marcelo",
+      "apellido": "Ponce",
+      "matricula": "MN-18633",
+      "id_sucursal": "S015",
+      "cantidad_ventas": 1
+    },
+    {
+      "id_farmaceutico": "F007",
+      "nombre": "Romina",
+      "apellido": "Acuña",
+      "matricula": "MN-18401",
+      "id_sucursal": "S005",
+      "cantidad_ventas": 0
+    },
+    {
+      "id_farmaceutico": "F011",
+      "nombre": "Gonzalo",
+      "apellido": "Moreno",
+      "matricula": "MN-18520",
+      "id_sucursal": "S009",
+      "cantidad_ventas": 0
+    },
+    {
+      "id_farmaceutico": "F013",
+      "nombre": "Hernán",
+      "apellido": "Castro",
+      "matricula": "MN-18566",
+      "id_sucursal": "S011",
+      "cantidad_ventas": 0
+    },
+    {
+      "id_farmaceutico": "F016",
+      "nombre": "Pablo",
+      "apellido": "Correa",
+      "matricula": "MN-18602",
+      "id_sucursal": "S013",
+      "cantidad_ventas": 0
+    }
+  ]
+}

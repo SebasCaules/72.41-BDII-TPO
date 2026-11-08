@@ -1,0 +1,30 @@
+{
+  "generado": "2026-11-08",
+  "parametros": {},
+  "resultado": [
+    {
+      "id_farmaceutico": "F008",
+      "nombre": "Lorena",
+      "apellido": "Vega",
+      "id_sucursal": "S006",
+      "cantidad_ventas": 2,
+      "ingresos": 9100
+    },
+    {
+      "id_farmaceutico": "F010",
+      "nombre": "Paula",
+      "apellido": "Ibarra",
+      "id_sucursal": "S008",
+      "cantidad_ventas": 1,
+      "ingresos": 6900
+    },
+    {
+      "id_farmaceutico": "F009",
+      "nombre": "Diego",
+      "apellido": "Ferreyra",
+      "id_sucursal": "S007",
+      "cantidad_ventas": 1,
+      "ingresos": 5100
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "generado": "2026-11-08",
+  "parametros": {},
+  "resultado": [
+    {
+      "id_cliente": "C004",
+      "nombre": "Federico",
+      "apellido": "Navarro",
+      "activo": true,
+      "ultima_venta": {
+        "id_venta": "V001",
+        "fecha": "2025-09-18",
+        "estado": "Completada",
+        "total": 3850
+      }
+    },
+    {
+      "id_cliente": "C008",
+      "nombre": "Hugo",
+      "apellido": "Mansilla",
+      "activo": false,
+      "ultima_venta": null
+    },
+    {
+      "id_cliente": "C009",
+      "nombre": "Valentina",
+      "apellido": "Ortiz",
+      "activo": true,
+      "ultima_venta": null
+    },
+    {
+      "id_cliente": "C010",
+      "nombre": "Tomás",
+      "apellido": "Herrera",
+      "activo": true,
+      "ultima_venta": null
+    },
+    {
+      "id_cliente": "C011",
+      "nombre": "Graciela",
+      "apellido": "Molina",
+      "activo": true,
+      "ultima_venta": {
+        "id_venta": "V028",
+        "fecha": "2025-07-14",
+        "estado": "Completada",
+        "total": 8900
+      }
+    },
+    {
+      "id_cliente": "C012",
+      "nombre": "Raúl",
+      "apellido": "Domínguez",
+      "activo": false,
+      "ultima_venta": {
+        "id_venta": "V029",
+        "fecha": "2025-05-06",
+        "estado": "Completada",
+        "total": 5900
+      }
+    },
+    {
+      "id_cliente": "C018",
+      "nombre": "Florencia",
+      "apellido": "Vera",
+      "activo": true,
+      "ultima_venta": null
+    }
+  ]
+}

@@ -1,0 +1,161 @@
+{
+  "generado": "2026-11-08",
+  "parametros": {
+    "venta importada sin descuento": {
+      "id_venta": "V034",
+      "venta_insertada": {
+        "id_venta": "V034",
+        "id_cliente": "C005",
+        "id_farmaceutico": "F001",
+        "id_receta": null,
+        "fecha": "2026-11-08",
+        "tipo": "Venta libre",
+        "medio_pago": "Efectivo",
+        "total": 3500,
+        "estado": "Completada",
+        "items": [
+          {
+            "id_detalle": "D042",
+            "id_producto": "PRD002",
+            "cantidad": 1,
+            "precio_unit": 3500
+          }
+        ],
+        "stock_descontado": false
+      }
+    },
+    "rechazo por descuento repetido sobre la misma venta": {
+      "id_venta": "V034"
+    },
+    "rechazo por venta pendiente": {
+      "id_venta": "V012"
+    }
+  },
+  "resultado": [
+    {
+      "escenario": "venta importada sin descuento",
+      "antes": {
+        "venta": {
+          "id_venta": "V034",
+          "estado": "Completada",
+          "stock_descontado": false
+        },
+        "lotes": [
+          {
+            "id_lote": "L004",
+            "id_producto": "PRD002",
+            "unidades": 90,
+            "vencimiento": "2027-03-31"
+          }
+        ]
+      },
+      "despues": {
+        "venta": {
+          "id_venta": "V034",
+          "estado": "Completada",
+          "stock_descontado": true,
+          "consumos": [
+            {
+              "id_lote": "L004",
+              "id_producto": "PRD002",
+              "unidades": 1
+            }
+          ]
+        },
+        "lotes": [
+          {
+            "id_lote": "L004",
+            "id_producto": "PRD002",
+            "unidades": 89,
+            "vencimiento": "2027-03-31"
+          }
+        ]
+      },
+      "resultado": {
+        "id_venta": "V034",
+        "id_sucursal": "S001",
+        "consumos": [
+          {
+            "id_lote": "L004",
+            "id_producto": "PRD002",
+            "unidades": 1
+          }
+        ]
+      }
+    },
+    {
+      "escenario": "rechazo por descuento repetido sobre la misma venta",
+      "antes": {
+        "venta": {
+          "id_venta": "V034",
+          "estado": "Completada",
+          "stock_descontado": true,
+          "consumos": [
+            {
+              "id_lote": "L004",
+              "id_producto": "PRD002",
+              "unidades": 1
+            }
+          ]
+        },
+        "lotes": [
+          {
+            "id_lote": "L004",
+            "id_producto": "PRD002",
+            "unidades": 89,
+            "vencimiento": "2027-03-31"
+          }
+        ]
+      },
+      "despues": {
+        "venta": {
+          "id_venta": "V034",
+          "estado": "Completada",
+          "stock_descontado": true,
+          "consumos": [
+            {
+              "id_lote": "L004",
+              "id_producto": "PRD002",
+              "unidades": 1
+            }
+          ]
+        },
+        "lotes": [
+          {
+            "id_lote": "L004",
+            "id_producto": "PRD002",
+            "unidades": 89,
+            "vencimiento": "2027-03-31"
+          }
+        ]
+      },
+      "error": {
+        "codigo": "STOCK_YA_DESCONTADO",
+        "mensaje": "la venta V034 ya descontó stock"
+      }
+    },
+    {
+      "escenario": "rechazo por venta pendiente",
+      "antes": {
+        "venta": {
+          "id_venta": "V012",
+          "estado": "Pendiente",
+          "stock_descontado": false
+        },
+        "lotes": []
+      },
+      "despues": {
+        "venta": {
+          "id_venta": "V012",
+          "estado": "Pendiente",
+          "stock_descontado": false
+        },
+        "lotes": []
+      },
+      "error": {
+        "codigo": "VENTA_NO_COMPLETADA",
+        "mensaje": "la venta V012 está Pendiente"
+      }
+    }
+  ]
+}

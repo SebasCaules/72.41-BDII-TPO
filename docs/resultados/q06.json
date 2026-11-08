@@ -1,0 +1,106 @@
+{
+  "generado": "2026-11-08",
+  "parametros": {},
+  "resultado": [
+    {
+      "id_receta": "RC002",
+      "id_cliente": "C003",
+      "medico": "Dra. Silvia Montenegro",
+      "matricula_medico": "MP-39877",
+      "fecha_emision": "2026-07-15",
+      "tipo": "Tratamiento prolongado",
+      "dispensas_autorizadas": 3,
+      "dispensas_realizadas": 2,
+      "proxima_dispensa": "2026-09-15",
+      "estado": "Vigente",
+      "cliente": {
+        "id_cliente": "C003",
+        "nombre": "Carla",
+        "apellido": "Ruiz",
+        "dni": "40123456",
+        "email": "carla.r@gmail.com",
+        "telefono": "3515334455",
+        "ciudad": "Córdoba",
+        "provincia": "Córdoba",
+        "obra_social": "PAMI",
+        "nro_afiliado": "PA-771203",
+        "activo": true
+      }
+    },
+    {
+      "id_receta": "RC003",
+      "id_cliente": "C006",
+      "medico": "Dr. Pablo Echeverría",
+      "matricula_medico": "MP-41203",
+      "fecha_emision": "2026-08-01",
+      "tipo": "Tratamiento prolongado",
+      "dispensas_autorizadas": 3,
+      "dispensas_realizadas": 2,
+      "proxima_dispensa": "2026-10-01",
+      "estado": "Vigente",
+      "cliente": {
+        "id_cliente": "C006",
+        "nombre": "Ricardo",
+        "apellido": "Paz",
+        "dni": "14876543",
+        "email": "ricardo.p@gmail.com",
+        "telefono": "1167667788",
+        "ciudad": "Buenos Aires",
+        "provincia": "Buenos Aires",
+        "obra_social": "PAMI",
+        "nro_afiliado": "PA-662871",
+        "activo": true
+      }
+    },
+    {
+      "id_receta": "RC004",
+      "id_cliente": "C006",
+      "medico": "Dr. Pablo Echeverría",
+      "matricula_medico": "MP-41203",
+      "fecha_emision": "2026-09-20",
+      "tipo": "Tratamiento prolongado",
+      "dispensas_autorizadas": 3,
+      "dispensas_realizadas": 1,
+      "proxima_dispensa": "2026-10-20",
+      "estado": "Vigente",
+      "cliente": {
+        "id_cliente": "C006",
+        "nombre": "Ricardo",
+        "apellido": "Paz",
+        "dni": "14876543",
+        "email": "ricardo.p@gmail.com",
+        "telefono": "1167667788",
+        "ciudad": "Buenos Aires",
+        "provincia": "Buenos Aires",
+        "obra_social": "PAMI",
+        "nro_afiliado": "PA-662871",
+        "activo": true
+      }
+    },
+    {
+      "id_receta": "RC011",
+      "id_cliente": "C014",
+      "medico": "Dr. Fernando Bustos",
+      "matricula_medico": "MP-48132",
+      "fecha_emision": "2026-08-25",
+      "tipo": "Tratamiento prolongado",
+      "dispensas_autorizadas": 3,
+      "dispensas_realizadas": 2,
+      "proxima_dispensa": "2026-10-26",
+      "estado": "Vigente",
+      "cliente": {
+        "id_cliente": "C014",
+        "nombre": "Norma",
+        "apellido": "Castillo",
+        "dni": "12678901",
+        "email": "norma.castillo@gmail.com",
+        "telefono": "3516678906",
+        "ciudad": "Córdoba",
+        "provincia": "Córdoba",
+        "obra_social": "PAMI",
+        "nro_afiliado": "PA-884512",
+        "activo": true
+      }
+    }
+  ]
+}

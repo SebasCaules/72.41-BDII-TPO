@@ -1,0 +1,406 @@
+{
+  "generado": "2026-11-08",
+  "parametros": {},
+  "resultado": [
+    {
+      "id_producto": "PRD001",
+      "nombre": "Paracetamol 500mg x30",
+      "principio_activo": "Paracetamol",
+      "categoria": "Analgésico",
+      "presentacion": "Comprimidos x30",
+      "condicion_venta": "Venta libre",
+      "precio_unit": 2800,
+      "activo": true,
+      "proveedor": {
+        "id_proveedor": "PRV001",
+        "razon_social": "Laboratorios Andinos S.A.",
+        "cuit": "30-71234567-1",
+        "tipo": "Laboratorio",
+        "ciudad": "Buenos Aires",
+        "provincia": "Buenos Aires",
+        "telefono": "1143001100",
+        "activo": true
+      }
+    },
+    {
+      "id_producto": "PRD002",
+      "nombre": "Ibuprofeno 400mg x20",
+      "principio_activo": "Ibuprofeno",
+      "categoria": "Antiinflamatorio",
+      "presentacion": "Comprimidos x20",
+      "condicion_venta": "Venta libre",
+      "precio_unit": 3500,
+      "activo": true,
+      "proveedor": {
+        "id_proveedor": "PRV001",
+        "razon_social": "Laboratorios Andinos S.A.",
+        "cuit": "30-71234567-1",
+        "tipo": "Laboratorio",
+        "ciudad": "Buenos Aires",
+        "provincia": "Buenos Aires",
+        "telefono": "1143001100",
+        "activo": true
+      }
+    },
+    {
+      "id_producto": "PRD003",
+      "nombre": "Amoxicilina 500mg x21",
+      "principio_activo": "Amoxicilina",
+      "categoria": "Antibiótico",
+      "presentacion": "Cápsulas x21",
+      "condicion_venta": "Bajo receta",
+      "precio_unit": 9800,
+      "activo": true,
+      "proveedor": {
+        "id_proveedor": "PRV003",
+        "razon_social": "FarmaLitoral S.A.",
+        "cuit": "30-71555222-9",
+        "tipo": "Laboratorio",
+        "ciudad": "Rosario",
+        "provincia": "Santa Fe",
+        "telefono": "3414203300",
+        "activo": true
+      }
+    },
+    {
+      "id_producto": "PRD004",
+      "nombre": "Losartán 50mg x30",
+      "principio_activo": "Losartán",
+      "categoria": "Antihipertensivo",
+      "presentacion": "Comprimidos x30",
+      "condicion_venta": "Bajo receta",
+      "precio_unit": 6200,
+      "activo": true,
+      "proveedor": {
+        "id_proveedor": "PRV002",
+        "razon_social": "DroguMed S.R.L.",
+        "cuit": "30-70987654-3",
+        "tipo": "Droguería",
+        "ciudad": "Córdoba",
+        "provincia": "Córdoba",
+        "telefono": "3514102200",
+        "activo": true
+      }
+    },
+    {
+      "id_producto": "PRD005",
+      "nombre": "Metformina 850mg x60",
+      "principio_activo": "Metformina",
+      "categoria": "Antidiabético",
+      "presentacion": "Comprimidos x60",
+      "condicion_venta": "Bajo receta",
+      "precio_unit": 5400,
+      "activo": true,
+      "proveedor": {
+        "id_proveedor": "PRV003",
+        "razon_social": "FarmaLitoral S.A.",
+        "cuit": "30-71555222-9",
+        "tipo": "Laboratorio",
+        "ciudad": "Rosario",
+        "provincia": "Santa Fe",
+        "telefono": "3414203300",
+        "activo": true
+      }
+    },
+    {
+      "id_producto": "PRD006",
+      "nombre": "Atorvastatina 20mg x30",
+      "principio_activo": "Atorvastatina",
+      "categoria": "Hipolipemiante",
+      "presentacion": "Comprimidos x30",
+      "condicion_venta": "Bajo receta",
+      "precio_unit": 8900,
+      "activo": true,
+      "proveedor": {
+        "id_proveedor": "PRV002",
+        "razon_social": "DroguMed S.R.L.",
+        "cuit": "30-70987654-3",
+        "tipo": "Droguería",
+        "ciudad": "Córdoba",
+        "provincia": "Córdoba",
+        "telefono": "3514102200",
+        "activo": true
+      }
+    },
+    {
+      "id_producto": "PRD007",
+      "nombre": "Omeprazol 20mg x28",
+      "principio_activo": "Omeprazol",
+      "categoria": "Gastroprotector",
+      "presentacion": "Cápsulas x28",
+      "condicion_venta": "Bajo receta",
+      "precio_unit": 4800,
+      "activo": true,
+      "proveedor": {
+        "id_proveedor": "PRV004",
+        "razon_social": "Distribuidora Sur Salud S.A.",
+        "cuit": "30-70333111-5",
+        "tipo": "Droguería",
+        "ciudad": "Avellaneda",
+        "provincia": "Buenos Aires",
+        "telefono": "1142304400",
+        "activo": true
+      }
+    },
+    {
+      "id_producto": "PRD008",
+      "nombre": "Alprazolam 0,5mg x30",
+      "principio_activo": "Alprazolam",
+      "categoria": "Ansiolítico",
+      "presentacion": "Comprimidos x30",
+      "condicion_venta": "Bajo receta archivada",
+      "precio_unit": 7300,
+      "activo": true,
+      "proveedor": {
+        "id_proveedor": "PRV004",
+        "razon_social": "Distribuidora Sur Salud S.A.",
+        "cuit": "30-70333111-5",
+        "tipo": "Droguería",
+        "ciudad": "Avellaneda",
+        "provincia": "Buenos Aires",
+        "telefono": "1142304400",
+        "activo": true
+      }
+    },
+    {
+      "id_producto": "PRD009",
+      "nombre": "Levotiroxina 100mcg x50",
+      "principio_activo": "Levotiroxina",
+      "categoria": "Hormona tiroidea",
+      "presentacion": "Comprimidos x50",
+      "condicion_venta": "Bajo receta",
+      "precio_unit": 5900,
+      "activo": true,
+      "proveedor": {
+        "id_proveedor": "PRV003",
+        "razon_social": "FarmaLitoral S.A.",
+        "cuit": "30-71555222-9",
+        "tipo": "Laboratorio",
+        "ciudad": "Rosario",
+        "provincia": "Santa Fe",
+        "telefono": "3414203300",
+        "activo": true
+      }
+    },
+    {
+      "id_producto": "PRD010",
+      "nombre": "Salbutamol aerosol 100mcg",
+      "principio_activo": "Salbutamol",
+      "categoria": "Broncodilatador",
+      "presentacion": "Aerosol 200 dosis",
+      "condicion_venta": "Bajo receta",
+      "precio_unit": 7100,
+      "activo": true,
+      "proveedor": {
+        "id_proveedor": "PRV001",
+        "razon_social": "Laboratorios Andinos S.A.",
+        "cuit": "30-71234567-1",
+        "tipo": "Laboratorio",
+        "ciudad": "Buenos Aires",
+        "provincia": "Buenos Aires",
+        "telefono": "1143001100",
+        "activo": true
+      }
+    },
+    {
+      "id_producto": "PRD011",
+      "nombre": "Loratadina 10mg x10",
+      "principio_activo": "Loratadina",
+      "categoria": "Antihistamínico",
+      "presentacion": "Comprimidos x10",
+      "condicion_venta": "Venta libre",
+      "precio_unit": 2200,
+      "activo": true,
+      "proveedor": {
+        "id_proveedor": "PRV001",
+        "razon_social": "Laboratorios Andinos S.A.",
+        "cuit": "30-71234567-1",
+        "tipo": "Laboratorio",
+        "ciudad": "Buenos Aires",
+        "provincia": "Buenos Aires",
+        "telefono": "1143001100",
+        "activo": true
+      }
+    },
+    {
+      "id_producto": "PRD014",
+      "nombre": "Clonazepam 2mg x30",
+      "principio_activo": "Clonazepam",
+      "categoria": "Ansiolítico",
+      "presentacion": "Comprimidos x30",
+      "condicion_venta": "Bajo receta archivada",
+      "precio_unit": 6900,
+      "activo": true,
+      "proveedor": {
+        "id_proveedor": "PRV007",
+        "razon_social": "Droguería Mediterránea S.A.",
+        "cuit": "30-70876543-2",
+        "tipo": "Droguería",
+        "ciudad": "Córdoba",
+        "provincia": "Córdoba",
+        "telefono": "3514207700",
+        "activo": true
+      }
+    },
+    {
+      "id_producto": "PRD015",
+      "nombre": "Enalapril 10mg x30",
+      "principio_activo": "Enalapril",
+      "categoria": "Antihipertensivo",
+      "presentacion": "Comprimidos x30",
+      "condicion_venta": "Bajo receta",
+      "precio_unit": 4300,
+      "activo": true,
+      "proveedor": {
+        "id_proveedor": "PRV006",
+        "razon_social": "Laboratorios del Plata S.A.",
+        "cuit": "30-71402233-4",
+        "tipo": "Laboratorio",
+        "ciudad": "Buenos Aires",
+        "provincia": "Buenos Aires",
+        "telefono": "1143106600",
+        "activo": true
+      }
+    },
+    {
+      "id_producto": "PRD016",
+      "nombre": "Diclofenac 50mg x15",
+      "principio_activo": "Diclofenac",
+      "categoria": "Antiinflamatorio",
+      "presentacion": "Comprimidos x15",
+      "condicion_venta": "Venta libre",
+      "precio_unit": 2500,
+      "activo": true,
+      "proveedor": {
+        "id_proveedor": "PRV008",
+        "razon_social": "Química Santafesina S.R.L.",
+        "cuit": "30-71223344-8",
+        "tipo": "Laboratorio",
+        "ciudad": "Santa Fe",
+        "provincia": "Santa Fe",
+        "telefono": "3424308800",
+        "activo": true
+      }
+    },
+    {
+      "id_producto": "PRD017",
+      "nombre": "Cetirizina 10mg x10",
+      "principio_activo": "Cetirizina",
+      "categoria": "Antihistamínico",
+      "presentacion": "Comprimidos x10",
+      "condicion_venta": "Venta libre",
+      "precio_unit": 2000,
+      "activo": true,
+      "proveedor": {
+        "id_proveedor": "PRV009",
+        "razon_social": "Laboratorio Pampeano S.A.",
+        "cuit": "30-71556677-0",
+        "tipo": "Laboratorio",
+        "ciudad": "Bahía Blanca",
+        "provincia": "Buenos Aires",
+        "telefono": "2914409900",
+        "activo": true
+      }
+    },
+    {
+      "id_producto": "PRD018",
+      "nombre": "Vitamina C 1g x10",
+      "principio_activo": "Ácido ascórbico",
+      "categoria": "Vitamina",
+      "presentacion": "Comprimidos efervescentes x10",
+      "condicion_venta": "Venta libre",
+      "precio_unit": 2600,
+      "activo": true,
+      "proveedor": {
+        "id_proveedor": "PRV010",
+        "razon_social": "Distribuidora Paraná S.R.L.",
+        "cuit": "30-70664455-6",
+        "tipo": "Droguería",
+        "ciudad": "Rosario",
+        "provincia": "Santa Fe",
+        "telefono": "3414501000",
+        "activo": false
+      }
+    },
+    {
+      "id_producto": "PRD019",
+      "nombre": "Azitromicina 500mg x3",
+      "principio_activo": "Azitromicina",
+      "categoria": "Antibiótico",
+      "presentacion": "Comprimidos x3",
+      "condicion_venta": "Bajo receta",
+      "precio_unit": 8400,
+      "activo": true,
+      "proveedor": {
+        "id_proveedor": "PRV008",
+        "razon_social": "Química Santafesina S.R.L.",
+        "cuit": "30-71223344-8",
+        "tipo": "Laboratorio",
+        "ciudad": "Santa Fe",
+        "provincia": "Santa Fe",
+        "telefono": "3424308800",
+        "activo": true
+      }
+    },
+    {
+      "id_producto": "PRD020",
+      "nombre": "Simvastatina 20mg x30",
+      "principio_activo": "Simvastatina",
+      "categoria": "Hipolipemiante",
+      "presentacion": "Comprimidos x30",
+      "condicion_venta": "Bajo receta",
+      "precio_unit": 5100,
+      "activo": true,
+      "proveedor": {
+        "id_proveedor": "PRV006",
+        "razon_social": "Laboratorios del Plata S.A.",
+        "cuit": "30-71402233-4",
+        "tipo": "Laboratorio",
+        "ciudad": "Buenos Aires",
+        "provincia": "Buenos Aires",
+        "telefono": "1143106600",
+        "activo": true
+      }
+    },
+    {
+      "id_producto": "PRD022",
+      "nombre": "Sertralina 50mg x30",
+      "principio_activo": "Sertralina",
+      "categoria": "Antidepresivo",
+      "presentacion": "Comprimidos x30",
+      "condicion_venta": "Bajo receta",
+      "precio_unit": 7700,
+      "activo": true,
+      "proveedor": {
+        "id_proveedor": "PRV011",
+        "razon_social": "Laboratorios Serranos S.A.",
+        "cuit": "30-71778899-3",
+        "tipo": "Laboratorio",
+        "ciudad": "Córdoba",
+        "provincia": "Córdoba",
+        "telefono": "3514611100",
+        "activo": true
+      }
+    },
+    {
+      "id_producto": "PRD023",
+      "nombre": "Budesonida spray nasal 64mcg",
+      "principio_activo": "Budesonida",
+      "categoria": "Corticoide nasal",
+      "presentacion": "Spray 120 dosis",
+      "condicion_venta": "Bajo receta",
+      "precio_unit": 7600,
+      "activo": true,
+      "proveedor": {
+        "id_proveedor": "PRV012",
+        "razon_social": "Respira Farma S.A.",
+        "cuit": "30-71990011-5",
+        "tipo": "Laboratorio",
+        "ciudad": "Pilar",
+        "provincia": "Buenos Aires",
+        "telefono": "2304721200",
+        "activo": true
+      }
+    }
+  ]
+}

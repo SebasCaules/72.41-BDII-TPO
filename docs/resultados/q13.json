@@ -1,0 +1,242 @@
+{
+  "generado": "2026-11-08",
+  "parametros": {
+    "alta": {
+      "nombre": "Valeria",
+      "apellido": "Quiroga",
+      "dni": "99300400",
+      "email": "valeria.quiroga@gmail.com",
+      "telefono": "1162004400",
+      "ciudad": "La Plata",
+      "provincia": "Buenos Aires",
+      "obra_social": "IOMA",
+      "nro_afiliado": "IO-993004"
+    },
+    "modificación de contacto y cobertura": {
+      "id_cliente": "C023",
+      "cambios": {
+        "email": "vquiroga@hotmail.com",
+        "telefono": "1162004499",
+        "obra_social": "OSDE",
+        "nro_afiliado": "OS-993004"
+      }
+    },
+    "baja lógica": {
+      "id_cliente": "C023"
+    },
+    "rechazo por DNI repetido, el del cliente recién dado de baja": {
+      "nombre": "Valentina",
+      "apellido": "Quiroga",
+      "dni": "99300400",
+      "email": "valentina.quiroga@gmail.com",
+      "telefono": "1162004400",
+      "ciudad": "La Plata",
+      "provincia": "Buenos Aires",
+      "obra_social": "IOMA",
+      "nro_afiliado": "IO-993004"
+    }
+  },
+  "resultado": [
+    {
+      "escenario": "alta",
+      "antes": {
+        "clientes_con_dni": [],
+        "contadores": {
+          "clientes": 22
+        }
+      },
+      "despues": {
+        "clientes_con_dni": [
+          {
+            "id_cliente": "C023",
+            "nombre": "Valeria",
+            "apellido": "Quiroga",
+            "dni": "99300400",
+            "email": "valeria.quiroga@gmail.com",
+            "telefono": "1162004400",
+            "ciudad": "La Plata",
+            "provincia": "Buenos Aires",
+            "obra_social": "IOMA",
+            "nro_afiliado": "IO-993004",
+            "activo": true
+          }
+        ],
+        "contadores": {
+          "clientes": 23
+        }
+      },
+      "resultado": {
+        "id_cliente": "C023",
+        "nombre": "Valeria",
+        "apellido": "Quiroga",
+        "dni": "99300400",
+        "email": "valeria.quiroga@gmail.com",
+        "telefono": "1162004400",
+        "ciudad": "La Plata",
+        "provincia": "Buenos Aires",
+        "obra_social": "IOMA",
+        "nro_afiliado": "IO-993004",
+        "activo": true
+      }
+    },
+    {
+      "escenario": "modificación de contacto y cobertura",
+      "antes": {
+        "clientes_con_dni": [
+          {
+            "id_cliente": "C023",
+            "nombre": "Valeria",
+            "apellido": "Quiroga",
+            "dni": "99300400",
+            "email": "valeria.quiroga@gmail.com",
+            "telefono": "1162004400",
+            "ciudad": "La Plata",
+            "provincia": "Buenos Aires",
+            "obra_social": "IOMA",
+            "nro_afiliado": "IO-993004",
+            "activo": true
+          }
+        ],
+        "contadores": {
+          "clientes": 23
+        }
+      },
+      "despues": {
+        "clientes_con_dni": [
+          {
+            "id_cliente": "C023",
+            "nombre": "Valeria",
+            "apellido": "Quiroga",
+            "dni": "99300400",
+            "email": "vquiroga@hotmail.com",
+            "telefono": "1162004499",
+            "ciudad": "La Plata",
+            "provincia": "Buenos Aires",
+            "obra_social": "OSDE",
+            "nro_afiliado": "OS-993004",
+            "activo": true
+          }
+        ],
+        "contadores": {
+          "clientes": 23
+        }
+      },
+      "resultado": {
+        "id_cliente": "C023",
+        "nombre": "Valeria",
+        "apellido": "Quiroga",
+        "dni": "99300400",
+        "email": "vquiroga@hotmail.com",
+        "telefono": "1162004499",
+        "ciudad": "La Plata",
+        "provincia": "Buenos Aires",
+        "obra_social": "OSDE",
+        "nro_afiliado": "OS-993004",
+        "activo": true
+      }
+    },
+    {
+      "escenario": "baja lógica",
+      "antes": {
+        "clientes_con_dni": [
+          {
+            "id_cliente": "C023",
+            "nombre": "Valeria",
+            "apellido": "Quiroga",
+            "dni": "99300400",
+            "email": "vquiroga@hotmail.com",
+            "telefono": "1162004499",
+            "ciudad": "La Plata",
+            "provincia": "Buenos Aires",
+            "obra_social": "OSDE",
+            "nro_afiliado": "OS-993004",
+            "activo": true
+          }
+        ],
+        "contadores": {
+          "clientes": 23
+        }
+      },
+      "despues": {
+        "clientes_con_dni": [
+          {
+            "id_cliente": "C023",
+            "nombre": "Valeria",
+            "apellido": "Quiroga",
+            "dni": "99300400",
+            "email": "vquiroga@hotmail.com",
+            "telefono": "1162004499",
+            "ciudad": "La Plata",
+            "provincia": "Buenos Aires",
+            "obra_social": "OSDE",
+            "nro_afiliado": "OS-993004",
+            "activo": false
+          }
+        ],
+        "contadores": {
+          "clientes": 23
+        }
+      },
+      "resultado": {
+        "id_cliente": "C023",
+        "nombre": "Valeria",
+        "apellido": "Quiroga",
+        "dni": "99300400",
+        "email": "vquiroga@hotmail.com",
+        "telefono": "1162004499",
+        "ciudad": "La Plata",
+        "provincia": "Buenos Aires",
+        "obra_social": "OSDE",
+        "nro_afiliado": "OS-993004",
+        "activo": false
+      }
+    },
+    {
+      "escenario": "rechazo por DNI repetido, el del cliente recién dado de baja",
+      "antes": {
+        "clientes_con_dni": [
+          {
+            "id_cliente": "C023",
+            "nombre": "Valeria",
+            "apellido": "Quiroga",
+            "dni": "99300400",
+            "email": "vquiroga@hotmail.com",
+            "telefono": "1162004499",
+            "ciudad": "La Plata",
+            "provincia": "Buenos Aires",
+            "obra_social": "OSDE",
+            "nro_afiliado": "OS-993004",
+            "activo": false
+          }
+        ],
+        "contadores": {
+          "clientes": 23
+        }
+      },
+      "despues": {
+        "clientes_con_dni": [
+          {
+            "id_cliente": "C023",
+            "nombre": "Valeria",
+            "apellido": "Quiroga",
+            "dni": "99300400",
+            "email": "vquiroga@hotmail.com",
+            "telefono": "1162004499",
+            "ciudad": "La Plata",
+            "provincia": "Buenos Aires",
+            "obra_social": "OSDE",
+            "nro_afiliado": "OS-993004",
+            "activo": false
+          }
+        ],
+        "contadores": {
+          "clientes": 23
+        }
+      },
+      "error": {
+        "codigo": "DNI_DUPLICADO",
+        "mensaje": "ya existe un cliente con DNI 99300400"
+      }
+    }
+  ]
+}
