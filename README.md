@@ -72,7 +72,7 @@ Corremos los tests sobre la base `farmared_test` de MongoDB y la base 1 de Redis
 
 ## Estructura
 
-Este es el árbol previsto; `datos/`, `docs/`, `farmared/stock.py`, `farmared/lua/` y los módulos de `farmared/carga/` todavía no están.
+Este es el árbol previsto; `docs/`, `farmared/stock.py` y `farmared/lua/` todavía no están.
 
 ```
 .
