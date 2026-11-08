@@ -79,7 +79,7 @@ Este es el árbol previsto; `datos/`, `docs/`, `farmared/stock.py`, `farmared/lu
 ├── .devcontainer/                devcontainer.json  docker-compose.yml
 ├── datos/
 │   ├── provistos/*.csv           los nueve CSV del enunciado, sin modificar
-│   └── adicionales/              *.csv propios, mismas columnas, y CASOS.md
+│   └── adicionales/              filas propias, mismos nombres y columnas que provistos, y CASOS.md
 ├── docs/
 │   ├── resultados/qNN.json       salida de `demo`
 │   └── diagramas/

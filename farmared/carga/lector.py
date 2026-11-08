@@ -13,6 +13,7 @@ ENTEROS = {"unidades", "precio_unit", "cantidad", "total", "dispensas_autorizada
 BOOLEANOS = {"activo"}
 FECHAS = {"fecha", "fecha_emision", "proxima_dispensa"}
 TEXTO_FECHA = {"vencimiento"}   # se valida pero queda texto: va a Redis
+CSV = {f"{n}.csv" for n in ARCHIVOS}
 
 
 def valor(columna, texto):
@@ -52,6 +53,10 @@ def leer(nombre, carpeta):
         raise ValidacionError("DATO_INVALIDO", f"{origen} línea {linea}: no está en UTF-8") from e
     lector = csv.DictReader(io.StringIO(texto, newline=""))
     try:
+        columnas = lector.fieldnames or []
+        repetidas = [c for c in columnas if columnas.count(c) > 1]
+        if repetidas:
+            raise ValidacionError("DATO_INVALIDO", f"{origen} línea {lector.line_num}: columna repetida {repetidas[0]}")
         for fila in lector:
             filas.append({k: valor(k, v) for k, v in fila.items() if v is not None})
     except (ValueError, TypeError) as e:
@@ -61,5 +66,25 @@ def leer(nombre, carpeta):
     return filas
 
 
+def _entradas(carpeta):
+    """Nombre de cada entrada de la carpeta, tal como lo da el sistema, y si es un archivo; sin las ocultas."""
+    ruta = DATOS / carpeta
+    return sorted((e.name, e.is_file()) for e in ruta.iterdir() if not e.name.startswith(".")) if ruta.is_dir() else []
+
+
+def _revisar_carpetas(solo_provistos):
+    provistos = _entradas("provistos")
+    faltan = sorted(CSV - {nombre for nombre, es_archivo in provistos if es_archivo})
+    if faltan:
+        raise ValidacionError("DATO_INVALIDO", f"provistos/{faltan[0]}: falta el archivo")
+    otros = [f"provistos/{nombre}" for nombre, es_archivo in provistos if not es_archivo or nombre not in CSV]
+    if not solo_provistos:
+        otros += [f"adicionales/{nombre}" for nombre, es_archivo in _entradas("adicionales")
+                  if not es_archivo or nombre not in CSV | {"CASOS.md"}]
+    if otros:
+        raise ValidacionError("DATO_INVALIDO", f"{otros[0]}: archivo desconocido")
+
+
 def leer_todo(solo_provistos=False):
+    _revisar_carpetas(solo_provistos)
     return {n: leer(n, "provistos") + ([] if solo_provistos else leer(n, "adicionales")) for n in ARCHIVOS}

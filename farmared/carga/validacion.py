@@ -1,6 +1,7 @@
+import re
 from collections import Counter, defaultdict
 
-from farmared import dominio
+from farmared import dominio, fechas
 
 COLUMNAS = {
     "clientes": ("id_cliente", "nombre", "apellido", "dni", "email", "telefono", "ciudad", "provincia", "obra_social",
@@ -38,6 +39,11 @@ DOMINIOS = {
     "ventas": {"tipo": dominio.TIPOS_VENTA, "medio_pago": dominio.MEDIOS_DE_PAGO, "estado": dominio.ESTADOS_VENTA},
 }
 MAX_DISPENSAS = {"Simple": 1, "Archivada": 1, "Tratamiento prolongado": 3}
+PREFIJOS = {"clientes": "C", "sucursales": "S", "farmaceuticos": "F", "proveedores": "PRV", "productos": "PRD",
+            "stock_lotes": "L", "recetas": "RC", "ventas": "V", "detalle_ventas": "D"}
+MINIMOS = {"productos": {"precio_unit": 1}, "stock_lotes": {"unidades": 0},   # enteros: mínimo 1 es mayor que 0
+           "detalle_ventas": {"cantidad": 1, "precio_unit": 1}}
+NO_FUTURAS = {"recetas": "fecha_emision", "ventas": "fecha"}
 
 
 def _error(archivo, n, fila, etiqueta, detalle):
@@ -261,8 +267,40 @@ def _receta_fecha(t):
                          f"{fecha:%Y-%m-%d} anterior a la receta {emision:%Y-%m-%d}")
 
 
+def _formato_id(t):
+    for archivo, prefijo in PREFIJOS.items():
+        for n, fila in t.todas[archivo]:
+            id_ = fila.get(CLAVES[archivo])
+            # [0-9] y no \d, que también acepta dígitos de otros alfabetos. Hasta 18 dígitos: el número entra en
+            # el entero de 64 bits del contador de MongoDB.
+            if id_ is not None and not re.fullmatch(f"{prefijo}([0-9]{{3}}|[1-9][0-9]{{3,17}})", id_):
+                yield _error(archivo, n, fila, "formato-id",
+                             f"formato inválido; se espera {prefijo} y un número de tres dígitos, como {prefijo}001")
+
+
+def _rango(t):
+    for archivo, campos in MINIMOS.items():
+        for n, fila in t.todas[archivo]:
+            for campo, minimo in campos.items():
+                valor = fila.get(campo)
+                if valor is not None and valor < minimo:
+                    condicion = "mayor o igual que 0" if minimo == 0 else "mayor que 0"
+                    yield _error(archivo, n, fila, "rango", f"{campo} {valor} debe ser {condicion}")
+
+
+def _fecha_futura(t):
+    hoy = fechas.hoy()
+    for archivo, campo in NO_FUTURAS.items():
+        for n, fila in t.todas[archivo]:
+            valor = fila.get(campo)
+            if valor is not None and valor.date() > hoy:
+                yield _error(archivo, n, fila, "fecha-futura",
+                             f"{campo} {valor:%Y-%m-%d} posterior a hoy ({hoy:%Y-%m-%d})")
+
+
 REGLAS = (_encabezado, _obligatorio, _id_repetido, _clave_unica, _referencia, _dominio, _afiliado, _total, _tipo_venta,
-          _receta_cliente, _receta_requerida, _venta_en_farmacia, _dispensas, _receta_coherente, _receta_fecha)
+          _receta_cliente, _receta_requerida, _venta_en_farmacia, _dispensas, _receta_coherente, _receta_fecha,
+          _formato_id, _rango, _fecha_futura)
 
 
 def errores(filas):

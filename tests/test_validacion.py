@@ -6,12 +6,13 @@ import shutil
 
 import pytest
 
+from farmared import fechas
 from farmared.carga import lector
-from farmared.carga.validacion import CLAVES, errores
+from farmared.carga.validacion import CLAVES, PREFIJOS, REFERENCIAS, errores
 
 ETIQUETAS = {"encabezado", "obligatorio", "id-repetido", "clave-unica", "referencia", "dominio", "afiliado", "total",
              "tipo-venta", "receta-cliente", "receta-requerida", "venta-en-farmacia", "dispensas", "receta-coherente",
-             "receta-fecha"}
+             "receta-fecha", "formato-id", "rango", "fecha-futura"}
 FORMATO = re.compile(r"^(?:%s)\.csv (?:fila \d+|\S+): \[([a-z-]+)\] \S.*$" % "|".join(CLAVES))
 PROVISTOS = lector.DATOS / "provistos"
 
@@ -579,13 +580,143 @@ def test_receta_fecha_con_fechas_vacias_solo_informa_obligatorio(filas, archivo,
     assert etiquetas(filas) == {"obligatorio"}
 
 
-def test_no_se_validan_actividad_treinta_dias_stock_ni_unidades(filas):
+def test_no_se_validan_actividad_treinta_dias_ni_stock(filas):
     fila(filas, "farmaceuticos", "F001")["activo"] = False
     fila(filas, "productos", "PRD001")["activo"] = False
     fila(filas, "recetas", "RC002")["proxima_dispensa"] = fecha("2026-08-16")
-    fila(filas, "stock_lotes", "L001")["unidades"] = -5
     filas["stock_lotes"] = [f for f in filas["stock_lotes"] if f["id_producto"] != "PRD003"]
     assert errores(filas) == []
+
+
+def renombrar(filas, archivo, id_, nuevo):
+    """Cambia el id de una fila y el de las filas que la citan, para que no se pierda ningún enlace."""
+    fila(filas, archivo, id_)[CLAVES[archivo]] = nuevo
+    for origen, campos in REFERENCIAS.items():
+        for campo, destino in campos.items():
+            for f in filas[origen]:
+                if destino == archivo and f.get(campo) == id_:
+                    f[campo] = nuevo
+
+
+def formato_invalido(archivo, id_):
+    prefijo = PREFIJOS[archivo]
+    return (f"{archivo}.csv {id_}: [formato-id] formato inválido; se espera {prefijo} y un número de tres dígitos, "
+            f"como {prefijo}001")
+
+
+@pytest.mark.parametrize("archivo", CLAVES)
+def test_formato_id_en_cada_archivo(filas, archivo):
+    id_ = filas[archivo][0][CLAVES[archivo]]
+    renombrar(filas, archivo, id_, PREFIJOS[archivo] + "X")
+    assert errores(filas) == [formato_invalido(archivo, PREFIJOS[archivo] + "X")]
+
+
+@pytest.mark.parametrize("id_", ["C001", "C999", "C1000", "C12345", "C" + "9" * 18])
+def test_formato_id_valido(filas, id_):
+    renombrar(filas, "clientes", "C001", "C900")
+    fila(filas, "clientes", "C008")["id_cliente"] = id_
+    assert errores(filas) == []
+
+
+@pytest.mark.parametrize("id_", ["CX", "C1", "C01", "C0001", "c001", " C001", "C001 ", "C001\n", "C١٢٣", "PRD001",
+                                 "C" + "1" * 19])
+def test_formato_id_invalido(filas, id_):
+    fila(filas, "clientes", "C008")["id_cliente"] = id_
+    assert errores(filas) == [formato_invalido("clientes", id_)]
+
+
+def test_formato_id_prefijo_de_otro_archivo(filas):
+    fila(filas, "productos", "PRD013")["id_producto"] = "PRV001"
+    assert errores(filas) == [formato_invalido("productos", "PRV001")]
+
+
+def test_formato_id_tambien_en_las_filas_repetidas(filas):
+    filas["clientes"] += [{**fila(filas, "clientes", "C008"), "id_cliente": "CX", "dni": str(n)} for n in (1, 2)]
+    assert errores(filas) == ["clientes.csv CX: [id-repetido] id repetido", formato_invalido("clientes", "CX"),
+                              formato_invalido("clientes", "CX")]
+
+
+def test_formato_id_citado_con_otra_forma_da_referencia_cascada_inherente(filas):
+    fila(filas, "recetas", "RC001")["id_receta"] = "RC1"
+    assert etiquetas(filas) == {"formato-id", "referencia", "dispensas"}
+
+
+def test_formato_id_vacio_solo_informa_obligatorio(filas):
+    fila(filas, "clientes", "C008")["id_cliente"] = None
+    assert etiquetas(filas) == {"obligatorio"}
+
+
+def ajustar_total(filas, id_venta):
+    fila(filas, "ventas", id_venta)["total"] = sum(d["cantidad"] * d["precio_unit"] for d in filas["detalle_ventas"]
+                                                   if d["id_venta"] == id_venta)
+
+
+@pytest.mark.parametrize("archivo,id_,campo,valor,condicion", [
+    ("stock_lotes", "L001", "unidades", -1, "mayor o igual que 0"),
+    ("productos", "PRD013", "precio_unit", 0, "mayor que 0"),
+    ("productos", "PRD013", "precio_unit", -100, "mayor que 0"),
+    ("detalle_ventas", "D001", "cantidad", 0, "mayor que 0"),
+    ("detalle_ventas", "D001", "cantidad", -1, "mayor que 0"),
+    ("detalle_ventas", "D001", "precio_unit", 0, "mayor que 0"),
+    ("detalle_ventas", "D001", "precio_unit", -3850, "mayor que 0"),
+])
+def test_rango(filas, archivo, id_, campo, valor, condicion):
+    f = fila(filas, archivo, id_)
+    f[campo] = valor
+    if archivo == "detalle_ventas":
+        ajustar_total(filas, f["id_venta"])
+    assert errores(filas) == [f"{archivo}.csv {id_}: [rango] {campo} {valor} debe ser {condicion}"]
+
+
+def test_rango_lote_agotado_es_valido(filas):
+    fila(filas, "stock_lotes", "L001")["unidades"] = 0
+    assert errores(filas) == []
+
+
+def test_rango_cantidad_fuera_de_rango_cambia_el_total_cascada_inherente(filas):
+    fila(filas, "detalle_ventas", "D001")["cantidad"] = 0
+    assert etiquetas(filas) == {"rango", "total"}
+
+
+@pytest.mark.parametrize("archivo,id_,campo", [("stock_lotes", "L001", "unidades"),
+                                               ("productos", "PRD013", "precio_unit"),
+                                               ("detalle_ventas", "D001", "cantidad")])
+def test_rango_vacio_solo_informa_obligatorio(filas, archivo, id_, campo):
+    fila(filas, archivo, id_)[campo] = None
+    assert etiquetas(filas) == {"obligatorio"}
+
+
+@pytest.mark.parametrize("archivo,id_,campo", [("ventas", "V013", "fecha"), ("recetas", "RC009", "fecha_emision")])
+def test_fecha_futura(filas, hoy_fijo, archivo, id_, campo):
+    assert hoy_fijo == datetime.date(2026, 11, 3)
+    fila(filas, archivo, id_)[campo] = fecha("2026-11-03")
+    assert errores(filas) == []
+    fila(filas, archivo, id_)[campo] = fecha("2026-11-04")
+    assert errores(filas) == [f"{archivo}.csv {id_}: [fecha-futura] {campo} 2026-11-04 posterior a hoy (2026-11-03)"]
+
+
+def test_fecha_futura_depende_de_hoy(originales, monkeypatch):
+    monkeypatch.setattr(fechas, "hoy", lambda: datetime.date(2026, 10, 11))
+    assert errores(originales) == ["ventas.csv V011: [fecha-futura] fecha 2026-10-12 posterior a hoy (2026-10-11)"]
+    monkeypatch.setattr(fechas, "hoy", lambda: datetime.date(2026, 10, 12))
+    assert errores(originales) == []
+
+
+def test_fecha_futura_no_alcanza_a_proxima_dispensa_ni_a_vencimiento(filas):
+    fila(filas, "recetas", "RC002")["proxima_dispensa"] = fecha("2027-01-15")
+    fila(filas, "stock_lotes", "L001")["vencimiento"] = "2030-01-01"
+    assert errores(filas) == []
+
+
+def test_fecha_futura_de_la_receta_puede_dar_receta_fecha_cascada_inherente(filas):
+    fila(filas, "recetas", "RC001")["fecha_emision"] = fecha("2026-12-01")
+    assert etiquetas(filas) == {"fecha-futura", "receta-fecha"}
+
+
+@pytest.mark.parametrize("archivo,id_,campo", [("ventas", "V013", "fecha"), ("recetas", "RC009", "fecha_emision")])
+def test_fecha_futura_vacia_solo_informa_obligatorio(filas, archivo, id_, campo):
+    fila(filas, archivo, id_)[campo] = None
+    assert etiquetas(filas) == {"obligatorio"}
 
 
 PERDIDA_DE_ENLACE = {("clientes", "id_cliente"): "referencia", ("sucursales", "id_sucursal"): "referencia",

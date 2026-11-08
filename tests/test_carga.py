@@ -1,13 +1,16 @@
 import csv
 import datetime
 import json
+import os
+import pathlib
 import shutil
 
+import bson
 import pytest
 from pymongo.errors import DuplicateKeyError
 
 import snapshots
-from farmared import carga, claves, config
+from farmared import carga, claves, config, ids
 from farmared.__main__ import main
 from farmared.carga import carga_mongo, carga_redis, lector
 from farmared.errores import ValidacionError
@@ -340,6 +343,8 @@ LOTES_INVALIDOS = [
     ("L002,PRD001,S002,L-2501A,-9223372036854775809,2027-08-31", f"{UNIDADES_INVALIDAS} '-9223372036854775809'"),
     (f"L002,PRD001,S002,L-2501A,1{'0' * 309},2027-08-31", f"{UNIDADES_INVALIDAS} '1{'0' * 309}'"),
     ("L002,PRD001,S002,L-2501A,35,", "stock_lotes.csv L002: [obligatorio] vencimiento vacío"),
+    ("L002,PRD001,S002,L-2501A,-1,2027-08-31",
+     "stock_lotes.csv L002: [rango] unidades -1 debe ser mayor o igual que 0"),
     ("L002,PRD001,S002,L-2501A,,2027-08-31", "stock_lotes.csv L002: [obligatorio] unidades vacío"),
     ("L002,PRD001,S002,,35,2027-08-31", "stock_lotes.csv L002: [obligatorio] nro_lote vacío"),
     ("L002,PRD001,S002,L-2501A,35", "stock_lotes.csv L002: [encabezado] columnas distintas de las esperadas"),
@@ -406,6 +411,146 @@ def test_sin_validar_el_encabezado_mal_escrito_falla_antes_de_borrar(copia, db, 
     antes = fotos()
     monkeypatch.setattr(carga, "validar", lambda *_: [])
     with pytest.raises((KeyError, ValidacionError)):
+        carga.cargar(solo_provistos=True)
+    assert fotos() == antes
+
+
+def test_columna_repetida_en_el_encabezado(copia, capsys):
+    escribir_mal_el_encabezado(copia, "clientes", "telefono", "email")
+    mensaje = "provistos/clientes.csv línea 1: columna repetida email"
+    with pytest.raises(ValidacionError) as e:
+        lector.leer("clientes", "provistos")
+    assert (e.value.codigo, e.value.mensaje) == ("DATO_INVALIDO", mensaje)
+    with pytest.raises(ValidacionError) as e:
+        carga.validar(True)
+    assert (e.value.codigo, e.value.mensaje) == ("DATO_INVALIDO", mensaje)
+    assert main(["carga", "--validar"]) == 1
+    assert capsys.readouterr().err == f"Error [DATO_INVALIDO]: {mensaje}\n"
+
+
+@pytest.mark.parametrize("nombre", ["cliente.csv", "Clientes.csv", "clientes.txt", "viejos"])
+def test_archivo_desconocido_en_adicionales(con_adicionales, capsys, nombre):
+    if nombre == "viejos":
+        (con_adicionales / "adicionales" / nombre).mkdir()
+    else:
+        shutil.copy(con_adicionales / "adicionales" / "clientes.csv", con_adicionales / "adicionales" / nombre)
+    mensaje = f"adicionales/{nombre}: archivo desconocido"
+    with pytest.raises(ValidacionError) as e:
+        carga.validar()
+    assert (e.value.codigo, e.value.mensaje) == ("DATO_INVALIDO", mensaje)
+    assert main(["carga", "--validar"]) == 1
+    assert capsys.readouterr().err == f"Error [DATO_INVALIDO]: {mensaje}\n"
+    assert carga.validar(True) == []
+    assert len(lector.leer_todo(True)["clientes"]) == 8
+
+
+def test_casos_y_ocultos_se_ignoran(con_adicionales):
+    (con_adicionales / "adicionales" / "CASOS.md").write_text("# Casos\n", encoding="utf-8")
+    for carpeta in ("provistos", "adicionales"):
+        (con_adicionales / carpeta / ".DS_Store").write_bytes(b"\x00\x01")
+        (con_adicionales / carpeta / ".gitkeep").write_text("", encoding="utf-8")
+    assert carga.validar() == []
+    assert len(lector.leer_todo()["clientes"]) == 9
+
+
+def test_falta_un_provisto(copia, capsys):
+    (copia / "provistos" / "stock_lotes.csv").unlink()
+    (copia / "provistos" / "notas.txt").write_text("", encoding="utf-8")
+    (copia / "adicionales").mkdir()
+    (copia / "adicionales" / "otro.csv").write_text("", encoding="utf-8")
+    mensaje = "provistos/stock_lotes.csv: falta el archivo"
+    for solo_provistos in (False, True):
+        with pytest.raises(ValidacionError) as e:
+            carga.validar(solo_provistos)
+        assert (e.value.codigo, e.value.mensaje) == ("DATO_INVALIDO", mensaje)
+    assert main(["carga", "--validar"]) == 1
+    assert capsys.readouterr().err == f"Error [DATO_INVALIDO]: {mensaje}\n"
+
+
+def sin_distinguir_mayusculas(monkeypatch):
+    """Hace que is_file y exists encuentren un archivo aunque el nombre difiera en mayúsculas, como en macOS."""
+    def real(ruta):
+        padre, nombre = os.path.split(os.fspath(ruta))
+        try:
+            return next((os.path.join(padre, n) for n in os.listdir(padre) if n.lower() == nombre.lower()), None)
+        except OSError:
+            return None
+
+    monkeypatch.setattr(pathlib.Path, "is_file", lambda self, *_, **__: os.path.isfile(real(self) or ""))
+    monkeypatch.setattr(pathlib.Path, "exists", lambda self, *_, **__: real(self) is not None)
+
+
+def test_otro_nombre_es_desconocido_aunque_el_sistema_no_distinga_mayusculas(con_adicionales, monkeypatch):
+    sin_distinguir_mayusculas(monkeypatch)
+    (con_adicionales / "adicionales" / "clientes.csv").rename(con_adicionales / "adicionales" / "Clientes.csv")
+    assert (con_adicionales / "adicionales" / "clientes.csv").is_file()   # la simulación está activa
+    with pytest.raises(ValidacionError, match="^adicionales/Clientes.csv: archivo desconocido$"):
+        carga.validar()
+    (con_adicionales / "provistos" / "clientes.csv").rename(con_adicionales / "provistos" / "Clientes.csv")
+    assert (con_adicionales / "provistos" / "clientes.csv").exists()
+    for solo_provistos in (False, True):
+        with pytest.raises(ValidacionError, match="^provistos/clientes.csv: falta el archivo$"):
+            carga.validar(solo_provistos)
+
+
+def test_sobra_un_archivo_en_provistos(copia):
+    (copia / "provistos" / "viejo.csv").write_text("", encoding="utf-8")
+    (copia / "adicionales").mkdir()
+    (copia / "adicionales" / "otro.csv").write_text("", encoding="utf-8")
+    for solo_provistos in (False, True):
+        with pytest.raises(ValidacionError) as e:
+            carga.validar(solo_provistos)
+        assert (e.value.codigo, e.value.mensaje) == ("DATO_INVALIDO", "provistos/viejo.csv: archivo desconocido")
+
+
+def test_sobra_una_subcarpeta_en_provistos(copia):
+    (copia / "provistos" / "viejos").mkdir()
+    with pytest.raises(ValidacionError, match="^provistos/viejos: archivo desconocido$"):
+        carga.validar(True)
+
+
+@pytest.mark.parametrize("id_", ["CX", "C" + "9" * 19, "C1" + "0" * 4400], ids=["sin-numero", "19-digitos",
+                                                                                 "4401-digitos"])
+def test_id_con_formato_invalido_no_llega_a_ningun_motor(copia, capsys, db, r, id_):
+    carga.cargar(solo_provistos=True)
+    alterar_motores(db, r)
+    reemplazar(copia / "provistos" / "clientes.csv", "C008,", f"{id_},")
+    antes = fotos()
+    motivo = f"clientes.csv {id_}: [formato-id] formato inválido; se espera C y un número de tres dígitos, como C001"
+    assert main(["carga", "--validar"]) == 1
+    salida = capsys.readouterr()
+    assert (salida.out, salida.err) == ("", f"Error [DATO_INVALIDO]: {motivo}\n")
+    with pytest.raises(ValidacionError) as e:
+        carga.cargar(solo_provistos=True)
+    assert (e.value.codigo, e.value.mensaje) == ("DATO_INVALIDO", motivo)
+    assert fotos() == antes
+
+
+def documento_de(largo):
+    """Un cliente que codificado en BSON ocupa exactamente largo bytes."""
+    base = len(bson.encode({"_id": "C001", "nombre": ""}))
+    return {"_id": "C001", "nombre": "x" * (largo - base)}
+
+
+def test_comprobar_admite_hasta_16_mib():
+    maximo = documento_de(carga_mongo.MAXIMO_BSON)
+    assert len(bson.encode(maximo)) == 16 * 1024 * 1024
+    assert carga_mongo._comprobar({"clientes": [maximo]}) == {"clientes": [maximo]}
+    with pytest.raises(ValidacionError) as e:
+        carga_mongo._comprobar({"clientes": [documento_de(carga_mongo.MAXIMO_BSON + 1)]})
+    assert (e.value.codigo, e.value.mensaje) == (
+        "DATO_INVALIDO", "clientes C001: documento de 16777217 bytes, más que el máximo de 16 MiB")
+
+
+def test_documento_de_mas_de_16_mib_falla_antes_de_borrar(copia, db, r, monkeypatch):
+    carga.cargar(solo_provistos=True)
+    alterar_motores(db, r)
+    antes = fotos()
+    filas = lector.leer_todo(True)
+    filas["clientes"][0]["nombre"] = "x" * carga_mongo.MAXIMO_BSON
+    monkeypatch.setattr(carga, "validar", lambda *_: [])
+    monkeypatch.setattr(lector, "leer_todo", lambda *_: filas)
+    with pytest.raises(ValidacionError, match="^clientes C001: documento de [0-9]+ bytes, más que el máximo"):
         carga.cargar(solo_provistos=True)
     assert fotos() == antes
 
@@ -740,6 +885,45 @@ def test_contadores_toman_el_mayor_sufijo(copia, db):
     assert list(db.contadores.find(sort=[("_id", 1)])) == [
         {"_id": "clientes", "ultimo": 120}, {"_id": "detalle_ventas", "ultimo": 1000},
         {"_id": "ventas", "ultimo": 1000}]
+
+
+def dejar_sin_filas(carpeta, archivo, contenido=None):
+    """Deja el archivo solo con su encabezado o, si se indica, con otro contenido."""
+    ruta = carpeta / "provistos" / f"{archivo}.csv"
+    encabezado = ruta.read_text(encoding="utf-8").splitlines()[0] + "\n"
+    ruta.write_text(encabezado if contenido is None else contenido, encoding="utf-8")
+
+
+@pytest.mark.parametrize("contenido", [None, ""], ids=["solo-encabezado", "sin-bytes"])
+def test_sin_filas_se_carga_vacio_y_los_contadores_quedan_en_cero(copia, db, r, contenido):
+    for archivo in lector.ARCHIVOS:
+        dejar_sin_filas(copia, archivo, contenido)
+    assert carga.validar(True) == []
+    assert carga.cargar(solo_provistos=True) == {"mongo": {**dict.fromkeys(CONTEOS, 0), "contadores": 3},
+                                                 "redis": {"lotes": 0}}
+    assert {c: db[c].count_documents({}) for c in PK} == dict.fromkeys(PK, 0)
+    assert list(db.contadores.find(sort=[("_id", 1)])) == [
+        {"_id": "clientes", "ultimo": 0}, {"_id": "detalle_ventas", "ultimo": 0}, {"_id": "ventas", "ultimo": 0}]
+    assert not r.exists(claves.LOTES, claves.UNIDADES)
+    assert ids.siguiente_id("clientes", "C") == "C001"
+
+
+def test_sin_ventas_ni_detalle_los_contadores_de_ventas_quedan_en_cero(copia, db):
+    dejar_sin_filas(copia, "ventas")
+    dejar_sin_filas(copia, "detalle_ventas")
+    # Sin ventas, ninguna receta puede tener dispensas.
+    recetas = crudas("recetas")
+    for receta in recetas:
+        receta.update(dispensas_realizadas="0", proxima_dispensa="", estado="Vigente")
+    with open(copia / "provistos" / "recetas.csv", "w", newline="", encoding="utf-8") as f:
+        escritor = csv.DictWriter(f, fieldnames=list(recetas[0]))
+        escritor.writeheader()
+        escritor.writerows(recetas)
+    assert carga.validar(True) == []
+    assert carga.cargar(solo_provistos=True)["mongo"] == {**CONTEOS, "ventas": 0}
+    assert list(db.contadores.find(sort=[("_id", 1)])) == [
+        {"_id": "clientes", "ultimo": 8}, {"_id": "detalle_ventas", "ultimo": 0}, {"_id": "ventas", "ultimo": 0}]
+    assert db.recetas.count_documents({"estado": "Vigente", "dispensas_realizadas": 0}) == CONTEOS["recetas"]
 
 
 def test_solo_provistos_ignora_adicionales(con_adicionales, capsys, db, r):

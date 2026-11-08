@@ -8,6 +8,8 @@ from pymongo import IndexModel
 from farmared import conexiones
 from farmared.errores import ValidacionError
 
+MAXIMO_BSON = 16 * 1024 * 1024   # el mayor documento que acepta MongoDB
+
 COLECCIONES = {"clientes": "id_cliente", "sucursales": "id_sucursal", "farmaceuticos": "id_farmaceutico",
                "proveedores": "id_proveedor", "productos": "id_producto", "recetas": "id_receta",
                "ventas": "id_venta"}
@@ -35,10 +37,12 @@ def documentos(filas):
     for v in docs["ventas"]:
         v["items"] = detalle[v["_id"]]
         v["stock_descontado"] = v["estado"] == "Completada"
+    # Sin filas, el contador queda en 0 y el primer id nuevo es el 001.
     docs["contadores"] = [
-        {"_id": "clientes", "ultimo": max(_sufijo(c["_id"]) for c in docs["clientes"])},
-        {"_id": "ventas", "ultimo": max(_sufijo(v["_id"]) for v in docs["ventas"])},
-        {"_id": "detalle_ventas", "ultimo": max(_sufijo(d["id_detalle"]) for d in filas["detalle_ventas"])},
+        {"_id": "clientes", "ultimo": max((_sufijo(c["_id"]) for c in docs["clientes"]), default=0)},
+        {"_id": "ventas", "ultimo": max((_sufijo(v["_id"]) for v in docs["ventas"]), default=0)},
+        {"_id": "detalle_ventas",
+         "ultimo": max((_sufijo(d["id_detalle"]) for d in filas["detalle_ventas"]), default=0)},
     ]
     return _comprobar(docs)
 
@@ -52,9 +56,12 @@ def _comprobar(docs):
                 raise ValidacionError("DATO_INVALIDO", f"{col}: {', '.join(campos)} repetido {repetidos[0]}")
         for d in lista:
             try:
-                bson.encode(d)
+                largo = len(bson.encode(d))
             except (OverflowError, InvalidDocument) as e:
                 raise ValidacionError("DATO_INVALIDO", f"{col} {d.get('_id')}: {e}") from e
+            if largo > MAXIMO_BSON:
+                raise ValidacionError("DATO_INVALIDO",
+                                      f"{col} {d.get('_id')}: documento de {largo} bytes, más que el máximo de 16 MiB")
     return docs
 
 
@@ -66,6 +73,7 @@ def cargar_mongo(docs):
         modelos = [IndexModel(k, **o) for k, o in INDICES.get(col, [])]
         if modelos:
             db[col].create_indexes(modelos)
-        db[col].insert_many(lista)
+        if lista:   # insert_many no acepta una lista vacía
+            db[col].insert_many(lista)
         conteos[col] = len(lista)
     return conteos
