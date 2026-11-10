@@ -1,8 +1,9 @@
 import random
+import re
 import time
 
 from pymongo import ReturnDocument
-from pymongo.errors import DuplicateKeyError, PyMongoError
+from pymongo.errors import DuplicateKeyError, PyMongoError, ServerSelectionTimeoutError
 
 from farmared import conexiones, formato, ids
 from farmared.dominio import OBRAS_SOCIALES
@@ -12,6 +13,27 @@ OBLIGATORIOS = ("nombre", "apellido", "dni", "email", "telefono", "ciudad", "pro
 MODIFICABLES = ("email", "telefono", "ciudad", "provincia", "obra_social", "nro_afiliado")
 SIN_COBERTURA = "Sin cobertura"
 INTENTOS = 5
+# Solo dígitos ASCII, o con puntos de miles (31.245.678); un DNI argentino tiene hasta 8 cifras.
+FORMATO_DNI = re.compile(r"[0-9]+|[0-9]{1,3}(?:\.[0-9]{3})+")
+CIFRAS_DNI = 8
+
+
+def normalizar_dni(texto):
+    """Lleva un DNI a su número: solo dígitos y sin ceros a la izquierda.
+
+    Parámetros:
+        texto: el DNI como se escribió, con o sin puntos de miles y con espacios en los extremos.
+    Retorna:
+        El número como texto ("31.245.678", "031245678" y " 31245678 " dan "31245678"), o None si no es un
+        número de documento de 1 a 8 cifras. El alta y la carga lo usan para comparar y para guardar.
+    Motor: ninguno.
+    Errores: ninguno.
+    """
+    texto = texto.strip()
+    if not FORMATO_DNI.fullmatch(texto):
+        return None
+    numero = texto.replace(".", "").lstrip("0")
+    return numero if 0 < len(numero) <= CIFRAS_DNI else None
 
 
 def _texto(campo, valor):
@@ -52,7 +74,10 @@ def _en_transaccion(operacion):
                     cliente = operacion(conexiones.get_db(), s)
             return formato.a_json({"id_cliente": cliente["_id"], **cliente})
         except PyMongoError as e:
-            if not e.has_error_label("TransientTransactionError") or intento == INTENTOS - 1:
+            # Sin servidor no hay conflicto que reintentar: pymongo marca igual como transitorio el error de
+            # selección de servidor dentro de una transacción, y cada intento volvería a esperarlo entero.
+            sin_servidor = isinstance(e, ServerSelectionTimeoutError)
+            if sin_servidor or not e.has_error_label("TransientTransactionError") or intento == INTENTOS - 1:
                 raise
             time.sleep(random.uniform(0.015, 0.15) * (intento + 1))
 
@@ -60,12 +85,15 @@ def _en_transaccion(operacion):
 def alta_cliente(datos):
     """Da de alta un cliente activo con DNI único.
 
+    El DNI se guarda y se compara como número (normalizar_dni): 31.245.678 y 031245678 son el mismo que 31245678.
+
     Parámetros:
         datos: campos del cliente; nro_afiliado es obligatorio salvo con 'Sin cobertura'.
     Retorna:
         El cliente creado, con id_cliente y sus campos.
     Motor: MongoDB (clientes y contador de ids).
-    Errores: ValidacionError con DATO_INVALIDO, OBRA_SOCIAL_INVALIDA o DNI_DUPLICADO.
+    Errores: ValidacionError con DATO_INVALIDO (también un DNI que no es un número de documento),
+        OBRA_SOCIAL_INVALIDA o DNI_DUPLICADO.
     """
     if not isinstance(datos, dict):
         raise ValidacionError("DATO_INVALIDO", "los datos del cliente deben ser un diccionario")
@@ -73,6 +101,11 @@ def alta_cliente(datos):
     if desconocidos:
         raise ValidacionError("DATO_INVALIDO", f"campo desconocido: {desconocidos[0]}")
     cliente = {c: _texto(c, datos.get(c)) for c in OBLIGATORIOS}
+    dni = normalizar_dni(cliente["dni"])
+    if dni is None:
+        detalle = "se espera un número de hasta 8 cifras, con o sin puntos"
+        raise ValidacionError("DATO_INVALIDO", f"dni inválido: {cliente['dni']} ({detalle})")
+    cliente["dni"] = dni
     _validar_obra_social(cliente["obra_social"])
     # Si la clave viene se valida igual que en la modificación, aunque 'Sin cobertura' después la descarte.
     if "nro_afiliado" in datos:
@@ -88,7 +121,9 @@ def alta_cliente(datos):
         try:
             db.clientes.insert_one(nuevo, session=s)
         except DuplicateKeyError:
-            # otra alta con el mismo DNI confirmó entre el chequeo y la inserción; el índice único la frena
+            # Dos altas de q13 no llegan a este punto: las dos incrementan el contador, la segunda choca ahí, se
+            # reintenta y la frena el chequeo previo. El índice único es la segunda barrera, ante una inserción con
+            # ese DNI que no pase por q13.
             raise _dni_duplicado(cliente["dni"]) from None
         return nuevo
 

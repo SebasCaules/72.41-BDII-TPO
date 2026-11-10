@@ -19,7 +19,9 @@ COLUMNAS = {
     "detalle_ventas": ("id_detalle", "id_venta", "id_producto", "cantidad", "precio_unit"),
 }
 CLAVES = {archivo: columnas[0] for archivo, columnas in COLUMNAS.items()}
-UNICAS = {"clientes": "dni", "farmaceuticos": "matricula", "proveedores": "cuit"}
+# Un lote es único por sucursal, producto y número: el mismo número de lote puede estar en varias sucursales.
+UNICAS = {"clientes": ("dni",), "farmaceuticos": ("matricula",), "proveedores": ("cuit",),
+          "stock_lotes": ("id_sucursal", "id_producto", "nro_lote")}
 REFERENCIAS = {
     "farmaceuticos": {"id_sucursal": "sucursales"},
     "productos": {"id_proveedor": "proveedores"},
@@ -112,15 +114,18 @@ def _id_repetido(t):
 
 
 def _clave_unica(t):
-    for archivo, campo in UNICAS.items():
+    for archivo, campos in UNICAS.items():
         vistos = set()
         for n, fila in t.todas[archivo]:
-            valor = fila.get(campo)
-            if valor is None:
+            valores = [fila.get(c) for c in campos]
+            if None in valores:
                 continue
-            if valor in vistos:
-                yield _error(archivo, n, fila, "clave-unica", f"{campo} {valor} repetido")
-            vistos.add(valor)
+            # El CUIT se escribe con o sin guiones; el DNI ya llega del lector reducido a su número.
+            clave = tuple(v.replace("-", "") if c == "cuit" else v for c, v in zip(campos, valores))
+            if clave in vistos:
+                detalle = ", ".join(f"{c} {v}" for c, v in zip(campos, valores))
+                yield _error(archivo, n, fila, "clave-unica", f"{detalle} repetido{'s' if len(campos) > 1 else ''}")
+            vistos.add(clave)
 
 
 def _referencia(t):
@@ -256,6 +261,10 @@ def _receta_coherente(t):
             if corresponde != (r["proxima_dispensa"] is not None):
                 detalle = "falta proxima_dispensa" if corresponde else "proxima_dispensa no corresponde"
                 yield _error("recetas", n, r, "receta-coherente", detalle)
+        proxima, emision = r.get("proxima_dispensa"), r.get("fecha_emision")
+        if proxima is not None and emision is not None and proxima < emision:
+            yield _error("recetas", n, r, "receta-coherente",
+                         f"proxima_dispensa {proxima:%Y-%m-%d} anterior a la emisión {emision:%Y-%m-%d}")
 
 
 def _receta_fecha(t):

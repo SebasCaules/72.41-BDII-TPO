@@ -159,7 +159,7 @@ def test_id_repetido_fila_agregada_con_otros_campos(filas, archivo):
     clave = CLAVES[archivo]
     primera, segunda = filas[archivo][0], filas[archivo][1]
     agregada = {**segunda, clave: primera[clave]}
-    for campo in ("dni", "matricula", "cuit"):
+    for campo in ("dni", "matricula", "cuit", "nro_lote"):
         if campo in agregada:
             agregada[campo] = "NUEVO"
     filas[archivo].append(agregada)

@@ -10,7 +10,8 @@ def validar(solo_provistos=False):
     Retorna:
         Lista de errores legibles; vacía si los datos son válidos.
     Motor: ninguno (solo lee los CSV).
-    Errores: ValidacionError si falta o sobra un archivo, un encabezado repite una columna o un valor no es de su tipo.
+    Errores: ValidacionError si falta o sobra un archivo, un provisto no tiene filas, falta la carpeta de adicionales
+        (sin solo_provistos), un encabezado repite una columna o un valor no es de su tipo.
     """
     return validacion.errores(lector.leer_todo(solo_provistos))
 

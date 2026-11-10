@@ -106,13 +106,13 @@ def base_con_provistos_al_terminar():
 @pytest.fixture
 def copia(tmp_path, monkeypatch):
     shutil.copytree(PROVISTOS, tmp_path / "provistos")
+    (tmp_path / "adicionales").mkdir()
     monkeypatch.setattr(lector, "DATOS", tmp_path)
     return tmp_path
 
 
 @pytest.fixture
 def con_adicionales(copia):
-    (copia / "adicionales").mkdir()
     for archivo, fila in ADICIONALES.items():
         encabezado = (copia / "provistos" / f"{archivo}.csv").read_text(encoding="utf-8").splitlines()[0]
         (copia / "adicionales" / f"{archivo}.csv").write_text(f"{encabezado}\n{fila}\n", encoding="utf-8")
@@ -255,8 +255,8 @@ def test_vacios_en_los_archivos():
     assert {v["id_venta"]: v["id_receta"] for v in filas["ventas"]}["V002"] is None
 
 
-@pytest.mark.parametrize("columna, texto", [("dni", "01234567"), ("telefono", "01145112233"),
-                                            ("cuit", "30-71234567-1"), ("nro_afiliado", "0012")])
+@pytest.mark.parametrize("columna, texto", [("telefono", "01145112233"), ("cuit", "30-71234567-1"),
+                                            ("nro_afiliado", "0012")])
 def test_identificadores_conservan_el_texto(columna, texto):
     assert lector.valor(columna, texto) == texto
 
@@ -287,7 +287,7 @@ def test_vencimiento_invalido(texto):
 
 @pytest.mark.parametrize("texto", [str(2**63 - 1), str(-2**63), "0", "-5"])
 def test_entero_dentro_de_int64(texto):
-    assert lector.valor("unidades", texto) == int(texto)
+    assert lector.valor("precio_unit", texto) == int(texto)
 
 
 @pytest.mark.parametrize("texto", [str(2**63), str(-2**63 - 1), "1" + "0" * 309])
@@ -298,7 +298,6 @@ def test_entero_fuera_de_int64(texto):
 
 
 def test_archivo_que_no_esta_en_utf8(copia, capsys):
-    (copia / "adicionales").mkdir()
     encabezado = (copia / "provistos" / "clientes.csv").read_text(encoding="utf-8").splitlines()[0]
     fila = "C009,Ana,Sosa,30111222,ana.s@gmail.com,1140001111,Córdoba,Córdoba,OSDE,OS-999001,True"
     (copia / "adicionales" / "clientes.csv").write_bytes(f"{encabezado}\n{fila}\n".encode("latin-1"))
@@ -456,7 +455,6 @@ def test_casos_y_ocultos_se_ignoran(con_adicionales):
 def test_falta_un_provisto(copia, capsys):
     (copia / "provistos" / "stock_lotes.csv").unlink()
     (copia / "provistos" / "notas.txt").write_text("", encoding="utf-8")
-    (copia / "adicionales").mkdir()
     (copia / "adicionales" / "otro.csv").write_text("", encoding="utf-8")
     mensaje = "provistos/stock_lotes.csv: falta el archivo"
     for solo_provistos in (False, True):
@@ -495,7 +493,6 @@ def test_otro_nombre_es_desconocido_aunque_el_sistema_no_distinga_mayusculas(con
 
 def test_sobra_un_archivo_en_provistos(copia):
     (copia / "provistos" / "viejo.csv").write_text("", encoding="utf-8")
-    (copia / "adicionales").mkdir()
     (copia / "adicionales" / "otro.csv").write_text("", encoding="utf-8")
     for solo_provistos in (False, True):
         with pytest.raises(ValidacionError) as e:
@@ -868,7 +865,6 @@ def test_adicionales_se_suman(con_adicionales, db, r):
 
 
 def test_contadores_toman_el_mayor_sufijo(copia, db):
-    (copia / "adicionales").mkdir()
     filas = {
         "clientes": ["C120,Ana,Sosa,30111222,ana.s@gmail.com,1140001111,Buenos Aires,Buenos Aires,OSDE,OS-999001,True",
                      "C010,Juan,Paz,30111333,juan.p@gmail.com,1140002222,Buenos Aires,Buenos Aires,PAMI,PA-999002,True"],
@@ -887,17 +883,13 @@ def test_contadores_toman_el_mayor_sufijo(copia, db):
         {"_id": "ventas", "ultimo": 1000}]
 
 
-def dejar_sin_filas(carpeta, archivo, contenido=None):
-    """Deja el archivo solo con su encabezado o, si se indica, con otro contenido."""
-    ruta = carpeta / "provistos" / f"{archivo}.csv"
-    encabezado = ruta.read_text(encoding="utf-8").splitlines()[0] + "\n"
-    ruta.write_text(encabezado if contenido is None else contenido, encoding="utf-8")
+def cargar_estas_filas(monkeypatch, filas):
+    """Hace que la carga tome estas filas en lugar de leer los CSV, donde un provisto sin filas se rechaza."""
+    monkeypatch.setattr(lector, "leer_todo", lambda *_: filas)
 
 
-@pytest.mark.parametrize("contenido", [None, ""], ids=["solo-encabezado", "sin-bytes"])
-def test_sin_filas_se_carga_vacio_y_los_contadores_quedan_en_cero(copia, db, r, contenido):
-    for archivo in lector.ARCHIVOS:
-        dejar_sin_filas(copia, archivo, contenido)
+def test_sin_filas_se_carga_vacio_y_los_contadores_quedan_en_cero(db, r, monkeypatch):
+    cargar_estas_filas(monkeypatch, {archivo: [] for archivo in lector.ARCHIVOS})
     assert carga.validar(True) == []
     assert carga.cargar(solo_provistos=True) == {"mongo": {**dict.fromkeys(CONTEOS, 0), "contadores": 3},
                                                  "redis": {"lotes": 0}}
@@ -908,17 +900,13 @@ def test_sin_filas_se_carga_vacio_y_los_contadores_quedan_en_cero(copia, db, r, 
     assert ids.siguiente_id("clientes", "C") == "C001"
 
 
-def test_sin_ventas_ni_detalle_los_contadores_de_ventas_quedan_en_cero(copia, db):
-    dejar_sin_filas(copia, "ventas")
-    dejar_sin_filas(copia, "detalle_ventas")
+def test_sin_ventas_ni_detalle_los_contadores_de_ventas_quedan_en_cero(db, monkeypatch):
+    filas = lector.leer_todo(True)
+    filas["ventas"], filas["detalle_ventas"] = [], []
     # Sin ventas, ninguna receta puede tener dispensas.
-    recetas = crudas("recetas")
-    for receta in recetas:
-        receta.update(dispensas_realizadas="0", proxima_dispensa="", estado="Vigente")
-    with open(copia / "provistos" / "recetas.csv", "w", newline="", encoding="utf-8") as f:
-        escritor = csv.DictWriter(f, fieldnames=list(recetas[0]))
-        escritor.writeheader()
-        escritor.writerows(recetas)
+    for receta in filas["recetas"]:
+        receta.update(dispensas_realizadas=0, proxima_dispensa=None, estado="Vigente")
+    cargar_estas_filas(monkeypatch, filas)
     assert carga.validar(True) == []
     assert carga.cargar(solo_provistos=True)["mongo"] == {**CONTEOS, "ventas": 0}
     assert list(db.contadores.find(sort=[("_id", 1)])) == [
@@ -945,7 +933,6 @@ def test_validar_con_adicional_corrupto(con_adicionales, capsys):
 
 
 def test_id_repetido_entre_carpetas_se_conserva_y_se_informa(copia):
-    (copia / "adicionales").mkdir()
     shutil.copy(copia / "provistos" / "clientes.csv", copia / "adicionales" / "clientes.csv")
     assert len(lector.leer_todo()["clientes"]) == 16
     assert any(e.startswith("clientes.csv C001: [id-repetido]") for e in carga.validar())

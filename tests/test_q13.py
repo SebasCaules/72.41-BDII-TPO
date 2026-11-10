@@ -132,7 +132,7 @@ def test_alta_sin_cobertura_con_afiliado_invalido_se_rechaza(datos_provistos, nr
 
 
 def test_alta_frena_en_el_indice_unico_si_el_chequeo_previo_no_ve_el_dni(datos_provistos, db, monkeypatch):
-    # Simula otra alta con el mismo DNI confirmada entre el chequeo y la inserción.
+    # Simula un DNI que el chequeo previo no ve, como el de una inserción que no pasó por q13.
     monkeypatch.setattr(q13, "_dni_registrado", lambda *argumentos: False)
     error = rechaza("DNI_DUPLICADO", q13.alta_cliente, {**DATOS, "dni": "31245678"})
     assert isinstance(error, ValidacionError)
