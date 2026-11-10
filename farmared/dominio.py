@@ -13,8 +13,9 @@ TIPOS_VENTA = {"Venta libre", "Con receta"}
 MEDIOS_DE_PAGO = {"Efectivo", "Débito", "Crédito", "Transferencia", "Obra social"}
 ESTADOS_VENTA = {"Completada", "Pendiente", "Anulada"}
 CONDICIONES_CON_RECETA = {"Bajo receta", "Bajo receta archivada"}
-# Solo dígitos ASCII, o con puntos de miles (31.245.678); un DNI argentino tiene hasta 8 cifras.
-FORMATO_DNI = re.compile(r"[0-9]+|[0-9]{1,3}(?:\.[0-9]{3})+")
+# Solo dígitos ASCII, o con puntos de miles (31.245.678); en las dos formas, los ceros a la izquierda no cuentan.
+# Un DNI argentino tiene hasta 8 cifras.
+FORMATO_DNI = re.compile(r"[0-9]+|0*[0-9]{1,3}(?:\.[0-9]{3})+")
 CIFRAS_DNI = 8
 
 

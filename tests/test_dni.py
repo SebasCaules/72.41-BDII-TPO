@@ -20,7 +20,7 @@ DATOS = {"nombre": "Paula", "apellido": "Sosa", "dni": "99100200", "email": "pau
 DNI_C001 = "31245678"
 ENCABEZADO = "id_cliente,nombre,apellido,dni,email,telefono,ciudad,provincia,obra_social,nro_afiliado,activo"
 CLIENTE_NUEVO = "C009,Ana,Sosa,{dni},ana.s@gmail.com,1140001111,Buenos Aires,Buenos Aires,OSDE,OS-999001,True"
-OTRAS_ESCRITURAS_C001 = ["31.245.678", "031245678", "031.245.678", " 31245678 "]
+OTRAS_ESCRITURAS_C001 = ["31.245.678", "031245678", "031.245.678", "0031.245.678", " 31245678 "]
 NO_SON_DNI = ["abc", "31-245-678", "31 245 678", "3.1245678", "31245.678", "31.245.678.", "123456789", "0", "000",
               "+31245678", "-31245678", "١٢٣٤٥٦٧٨", "31245678a"]
 
@@ -54,6 +54,7 @@ def correr_cli(*argumentos):
 @pytest.mark.parametrize("texto,numero", [
     ("31245678", "31245678"), ("31.245.678", "31245678"), ("031245678", "31245678"), ("031.245.678", "31245678"),
     (" 31245678 ", "31245678"), ("1.234.567", "1234567"), ("7", "7"), ("00000007", "7"), ("99999999", "99999999"),
+    ("0031.245.678", "31245678"), ("00000.007", "7"),
 ])
 def test_normalizar_deja_solo_el_numero(texto, numero):
     assert normalizar_dni(texto) == numero
