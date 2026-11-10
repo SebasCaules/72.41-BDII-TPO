@@ -1,9 +1,25 @@
 from farmared import claves, conexiones, fechas
 from farmared.errores import FarmaRedError
 
+# campos del hash del lote con que se arma cada fila
+CAMPOS = ("id_producto", "id_sucursal", "nro_lote", "unidades", "vencimiento")
+
 
 def _no_coinciden(id_lote, detalle):
     return FarmaRedError("DATOS_INCONSISTENTES", f"Redis y MongoDB no coinciden en el lote {id_lote}: {detalle}")
+
+
+def _revisar(id_lote, lote):
+    if not lote:
+        raise _no_coinciden(id_lote, f"está en {claves.UNIDADES} pero no existe {claves.lote(id_lote)}")
+    faltan = [c for c in CAMPOS if c not in lote]
+    if faltan:
+        raise _no_coinciden(id_lote, f"a {claves.lote(id_lote)} le falta {', '.join(faltan)}")
+    try:
+        int(lote["unidades"])
+    except ValueError:
+        raise _no_coinciden(id_lote, f"las unidades de {claves.lote(id_lote)} no son un número: "
+                                     f"{lote['unidades']}") from None
 
 
 def lotes_stock_bajo(umbral=50):
@@ -14,8 +30,8 @@ def lotes_stock_bajo(umbral=50):
     Retorna:
         Lista de lotes ordenada por unidades e id_lote.
     Motor: Redis (lotes por unidades) y MongoDB (nombres).
-    Errores: FarmaRedError DATOS_INCONSISTENTES si un lote no tiene su hash en Redis o apunta a un producto,
-        un proveedor o una sucursal que MongoDB no tiene.
+    Errores: FarmaRedError DATOS_INCONSISTENTES si un lote no tiene su hash en Redis, al hash le falta un campo
+        o sus unidades no son un número, o apunta a un producto, un proveedor o una sucursal que MongoDB no tiene.
     """
     r = conexiones.get_redis()
     ids_lote = r.zrange(claves.UNIDADES, "-inf", f"({umbral}", byscore=True)
@@ -24,8 +40,7 @@ def lotes_stock_bajo(umbral=50):
         pipe.hgetall(claves.lote(id_lote))
     lotes = pipe.execute()
     for id_lote, l in zip(ids_lote, lotes):
-        if not l:
-            raise _no_coinciden(id_lote, f"está en {claves.UNIDADES} pero no existe {claves.lote(id_lote)}")
+        _revisar(id_lote, l)
     db = conexiones.get_db()
     productos = {p["_id"]: p for p in db.productos.aggregate([
         {"$match": {"_id": {"$in": sorted({l["id_producto"] for l in lotes})}}},

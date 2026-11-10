@@ -16,6 +16,18 @@ def sin_hash(db, r):
     r.delete(claves.lote(LOTE))
 
 
+def sin_nro_lote(db, r):
+    r.hdel(claves.lote(LOTE), "nro_lote")
+
+
+def sin_id_producto(db, r):
+    r.hdel(claves.lote(LOTE), "id_producto")
+
+
+def unidades_que_no_son_un_numero(db, r):
+    r.hset(claves.lote(LOTE), "unidades", "abc")
+
+
 def producto_inexistente(db, r):
     r.hset(claves.lote(LOTE), "id_producto", "PRD999")
 
@@ -28,8 +40,8 @@ def proveedor_inexistente(db, r):
     db.productos.update_one({"_id": r.hget(claves.lote(LOTE), "id_producto")}, {"$set": {"id_proveedor": "PRV999"}})
 
 
-@pytest.mark.parametrize("desacuerdo", [sin_hash, producto_inexistente, sucursal_inexistente,
-                                        proveedor_inexistente])
+@pytest.mark.parametrize("desacuerdo", [sin_hash, sin_nro_lote, sin_id_producto, unidades_que_no_son_un_numero,
+                                        producto_inexistente, sucursal_inexistente, proveedor_inexistente])
 def test_si_redis_y_mongo_no_coinciden_informa_el_lote(datos_provistos, db, r, desacuerdo):
     desacuerdo(db, r)
     with pytest.raises(FarmaRedError) as error:
