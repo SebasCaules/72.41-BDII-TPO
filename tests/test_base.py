@@ -296,8 +296,9 @@ def test_siguiente_id_en_transaccion_confirmada_avanza(contador, db):
 
 
 def test_siguiente_id_sin_contador_lanza_y_no_lo_crea(contador, db):
-    with pytest.raises(RuntimeError, match=CONTADOR_AUSENTE):
+    with pytest.raises(errores.FarmaRedError, match=CONTADOR_AUSENTE) as capturado:
         ids.siguiente_id(CONTADOR_AUSENTE, "C")
+    assert capturado.value.codigo == "BASE_SIN_CARGA"
     assert db.contadores.count_documents({"_id": CONTADOR_AUSENTE}) == 0
 
 

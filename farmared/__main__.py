@@ -1,9 +1,16 @@
 import argparse
 import importlib
 import json
+import re
 import sys
 from pathlib import Path
 
+from pymongo.errors import ConnectionFailure, OperationFailure, PyMongoError
+from redis.exceptions import ConnectionError as RedisConnectionError
+from redis.exceptions import RedisError
+from redis.exceptions import TimeoutError as RedisTimeoutError
+
+from farmared import conexiones
 from farmared.errores import FarmaRedError, ValidacionError
 
 RESULTADOS = Path(__file__).resolve().parents[1] / "docs" / "resultados"
@@ -24,51 +31,93 @@ CONSULTAS = {
     "q15": ("q15_descontar_stock", "descontar_stock_venta"),
 }
 CONTACTO = ("email", "telefono", "ciudad", "provincia", "obra_social", "nro_afiliado")
+COMANDOS = {
+    "carga": "valida los CSV y reemplaza con ellos los datos de MongoDB y Redis",
+    "q01": "productos activos con los datos de su proveedor",
+    "q02": "ventas pendientes con el farmacéutico, la sucursal y el total",
+    "q03": "recetas y ventas de un cliente en orden cronológico",
+    "q04": "clientes con más de una receta",
+    "q05": "farmacéuticos activos con su cantidad de ventas recientes",
+    "q06": "recetas de tratamiento prolongado con la próxima dispensa vencida",
+    "q07": "productos más vendidos en unidades",
+    "q08": "lotes con menos unidades que un umbral",
+    "q09": "ventas de venta libre con total menor a un monto",
+    "q10": "clientes atendidos en una sucursal",
+    "q11": "ingresos del mes actual por farmacéutico",
+    "q12": "clientes sin ventas en el último año",
+    "q13": "alta, modificación y baja lógica de clientes",
+    "q14": "registra una venta y descuenta el stock",
+    "q15": "descuenta el stock de una venta registrada",
+    "demo": "recarga los datos y escribe los resultados de ejemplo en docs/resultados/",
+}
+# Mismo criterio que el límite de q07: un parámetro numérico de una consulta es un entero positivo.
+POSITIVOS = {"dias": "los días deben", "limite": "el límite debe", "umbral": "el umbral debe",
+             "monto": "el monto debe"}
+ITEM = re.compile(r"(?P<id_producto>[^:]+):(?P<cantidad>[0-9]+)")
 
 
 def _item(texto):
-    producto, _, cantidad = texto.partition(":")
-    return {"id_producto": producto, "cantidad": int(cantidad)}
+    partes = ITEM.fullmatch(texto)
+    if partes is None:
+        raise argparse.ArgumentTypeError(
+            f"se espera PRODUCTO:CANTIDAD con la cantidad en dígitos, por ejemplo PRD001:2, y llegó {texto!r}")
+    return {"id_producto": partes["id_producto"], "cantidad": int(partes["cantidad"])}
+
+
+def _comando(sub, nombre, ayuda):
+    return sub.add_parser(nombre, help=ayuda, description=ayuda, allow_abbrev=False)
 
 
 def _parser():
-    p = argparse.ArgumentParser(prog="python -m farmared")
-    sub = p.add_subparsers(dest="comando", required=True)
-    c = sub.add_parser("carga")
-    c.add_argument("--solo-provistos", action="store_true")
-    c.add_argument("--validar", action="store_true")
-    for q in ("q01", "q02", "q04", "q06", "q11", "q12"):
-        sub.add_parser(q)
-    sub.add_parser("q03").add_argument("id_cliente")
-    sub.add_parser("q05").add_argument("--dias", type=int, default=60)
-    sub.add_parser("q07").add_argument("--limite", type=int, default=5)
-    sub.add_parser("q08").add_argument("--umbral", type=int, default=50)
-    sub.add_parser("q09").add_argument("--monto", type=int, default=5000)
-    sub.add_parser("q10").add_argument("id_sucursal")
-    q13 = sub.add_parser("q13").add_subparsers(dest="accion", required=True)
-    alta = q13.add_parser("alta")
+    p = argparse.ArgumentParser(prog="python -m farmared", allow_abbrev=False,
+                                description="Carga de datos, consultas y servicios de FarmaRed sobre MongoDB y Redis.",
+                                epilog="El resultado sale en JSON por stdout. Un error sale por stderr como "
+                                       "Error [CODIGO]: mensaje, con código de salida 1; un argumento faltante o "
+                                       "mal formado, con el uso del comando y código de salida 2.")
+    sub = p.add_subparsers(dest="comando", required=True, metavar="comando")
+    c = {nombre: _comando(sub, nombre, ayuda) for nombre, ayuda in COMANDOS.items()}
+    c["carga"].add_argument("--solo-provistos", action="store_true", help="no lee datos/adicionales/")
+    c["carga"].add_argument("--validar", action="store_true", help="solo valida los CSV, sin escribir")
+    c["q03"].add_argument("id_cliente", help="por ejemplo C001")
+    c["q05"].add_argument("--dias", type=int, default=60, help="días hacia atrás desde hoy, 60 por defecto")
+    c["q07"].add_argument("--limite", type=int, default=5, help="cantidad de productos, 5 por defecto")
+    c["q08"].add_argument("--umbral", type=int, default=50,
+                          help="lotes con menos unidades que este valor, 50 por defecto")
+    c["q09"].add_argument("--monto", type=int, default=5000,
+                          help="ventas con total menor a este monto en pesos, 5000 por defecto")
+    c["q10"].add_argument("id_sucursal", help="por ejemplo S001")
+    q13 = c["q13"].add_subparsers(dest="accion", required=True, metavar="acción")
+    alta = _comando(q13, "alta", "da de alta un cliente activo con DNI único")
     for campo in ("nombre", "apellido", "dni") + CONTACTO:
         alta.add_argument("--" + campo.replace("_", "-"), required=campo != "nro_afiliado")
-    modificar = q13.add_parser("modificar")
+    modificar = _comando(q13, "modificar", "modifica los datos de contacto y la obra social de un cliente activo")
     modificar.add_argument("id_cliente")
     for campo in CONTACTO:
         modificar.add_argument("--" + campo.replace("_", "-"))
-    q13.add_parser("baja").add_argument("id_cliente")
-    q14 = sub.add_parser("q14")
-    q14.add_argument("--cliente", required=True)
-    q14.add_argument("--farmaceutico", required=True)
-    q14.add_argument("--item", type=_item, action="append", required=True)
-    q14.add_argument("--medio-pago", required=True)
-    q14.add_argument("--receta")
-    sub.add_parser("q15").add_argument("id_venta")
-    sub.add_parser("demo")
+    _comando(q13, "baja", "baja lógica de un cliente activo").add_argument("id_cliente")
+    c["q14"].add_argument("--cliente", required=True)
+    c["q14"].add_argument("--farmaceutico", required=True)
+    c["q14"].add_argument("--item", type=_item, action="append", required=True, metavar="PRODUCTO:CANTIDAD",
+                          help="producto y cantidad, por ejemplo PRD001:2; se repite para vender varios productos")
+    c["q14"].add_argument("--medio-pago", required=True)
+    c["q14"].add_argument("--receta", help="solo si algún producto es bajo receta")
+    c["q15"].add_argument("id_venta")
     return p
 
 
+def _validar_positivos(a):
+    for campo, sujeto in POSITIVOS.items():
+        valor = getattr(a, campo, None)
+        if valor is not None and valor < 1:
+            raise ValidacionError("DATO_INVALIDO", f"{sujeto} ser al menos 1: {valor}")
+
+
 def ejecutar(a):
+    _validar_positivos(a)
     if a.comando == "carga":
         from farmared import carga
         if not a.validar:
+            conexiones.comprobar()
             return carga.cargar(a.solo_provistos)
         errores = carga.validar(a.solo_provistos)
         if errores:
@@ -76,6 +125,7 @@ def ejecutar(a):
         return []
     if a.comando == "demo":
         from farmared import demo
+        conexiones.comprobar()
         return demo.ejecutar(RESULTADOS)
     if a.comando == "q13":
         from farmared.consultas import q13_abm_clientes as q13
@@ -93,6 +143,17 @@ def ejecutar(a):
     return f(**{k: v for k, v in vars(a).items() if k != "comando"})
 
 
+def _error_de_motor(e):
+    motor = "MongoDB" if isinstance(e, PyMongoError) else "Redis"
+    if isinstance(e, (ConnectionFailure, RedisConnectionError, RedisTimeoutError)):
+        return "CONEXION", f"{motor} no responde"
+    # dentro de una transacción, MongoDB marca así un choque con otra escritura; los servicios ya reintentaron
+    if isinstance(e, PyMongoError) and e.has_error_label("TransientTransactionError"):
+        return "CONFLICTO", "otra escritura simultánea en MongoDB canceló la operación; se puede reintentar"
+    detalle = e.details.get("errmsg", str(e)) if isinstance(e, OperationFailure) and e.details else str(e)
+    return "MOTOR", f"{motor} devolvió un error: {detalle}"
+
+
 def main(argv=None):
     a = _parser().parse_args(argv)
     try:
@@ -100,9 +161,10 @@ def main(argv=None):
     except FarmaRedError as e:
         print(f"Error [{e.codigo}]: {e.mensaje}", file=sys.stderr)
         return 1
-    except NotImplementedError:
-        print(f"Error: {a.comando} todavía no está implementado", file=sys.stderr)
-        return 2
+    except (PyMongoError, RedisError) as e:
+        codigo, mensaje = _error_de_motor(e)
+        print(f"Error [{codigo}]: {mensaje}", file=sys.stderr)
+        return 1
     print(json.dumps(resultado, indent=2, ensure_ascii=False))
     return 0
 
