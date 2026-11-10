@@ -216,7 +216,8 @@ def test_claves_con_los_nombres_del_modelo():
     assert claves.stock("S001", "PRD003") == "stock:S001:PRD003"
     assert claves.UNIDADES == "lotes:unidades"
     assert claves.LOTES == "lotes"
-    assert claves.PATRONES == ("lote:*", "stock:*")
+    assert claves.PATRONES == ("lote:*", "stock:*", "descuento:*")
+    assert claves.descuento("V017") == "descuento:V017"
 
 
 def test_jerarquia_de_errores():

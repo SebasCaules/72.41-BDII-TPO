@@ -156,10 +156,10 @@ def test_otra_llamada_marca_la_venta_mientras_tanto(datos_provistos, db, monkeyp
     id_venta = insertar_venta(db, "C005", "F001", [("PRD002", 1)])
     original = stock.descontar_fefo
 
-    def descontar_y_adelantarse(id_sucursal, items):
-        consumos = original(id_sucursal, items)
-        # otra llamada termina primero: descontó lo suyo y marcó la venta
-        original(id_sucursal, items)
+    def descontar_y_adelantarse(id_sucursal, items, **kwargs):
+        consumos = original(id_sucursal, items, **kwargs)
+        # otra llamada termina primero: recibe los consumos del mismo registro y marca la venta
+        original(id_sucursal, items, **kwargs)
         db.ventas.update_one({"_id": id_venta}, {"$set": {"stock_descontado": True, "consumos": consumos}})
         return consumos
 
