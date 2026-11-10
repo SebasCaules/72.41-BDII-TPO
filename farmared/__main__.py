@@ -49,9 +49,12 @@ COMANDOS = {
     "q15": "descuenta el stock de una venta registrada",
     "demo": "recarga los datos y escribe los resultados de ejemplo en docs/resultados/",
 }
-# Valor mínimo de cada parámetro numérico. El del límite es el que ya valida q07; cero días es la ventana de hoy.
-MINIMOS = {"dias": (0, "los días deben"), "limite": (1, "el límite debe"), "umbral": (1, "el umbral debe"),
-           "monto": (1, "el monto debe")}
+# Valores mínimo y máximo de cada parámetro numérico. El mínimo del límite es el que ya valida q07; cero días es la
+# ventana de hoy. Los máximos, cien años hacia atrás y el mayor entero de 32 bits, quedan lejos de cualquier dato
+# real y evitan que un valor enorme desborde las fechas de Python o los enteros de MongoDB.
+MAYOR_ENTERO = 2**31 - 1
+RANGOS = {"dias": (0, 36500, "los días deben"), "limite": (1, MAYOR_ENTERO, "el límite debe"),
+          "umbral": (1, MAYOR_ENTERO, "el umbral debe"), "monto": (1, MAYOR_ENTERO, "el monto debe")}
 ITEM = re.compile(r"(?P<id_producto>[^:]+):(?P<cantidad>[0-9]+)")
 
 
@@ -104,15 +107,27 @@ def _parser():
     return p
 
 
-def _validar_minimos(a):
-    for campo, (minimo, sujeto) in MINIMOS.items():
+def _validar_rangos(a):
+    for campo, (minimo, maximo, sujeto) in RANGOS.items():
         valor = getattr(a, campo, None)
         if valor is not None and valor < minimo:
             raise ValidacionError("DATO_INVALIDO", f"{sujeto} ser al menos {minimo}: {valor}")
+        if valor is not None and valor > maximo:
+            raise ValidacionError("DATO_INVALIDO", f"{sujeto} ser como máximo {maximo}: {valor}")
+
+
+def _validar_utf8(argumentos):
+    for argumento in argumentos:
+        try:
+            argumento.encode("utf-8")
+        except UnicodeEncodeError:
+            # Python entrega los bytes que no son UTF-8 como caracteres sustitutos, que no se pueden enviar a
+            # MongoDB ni a Redis
+            raise ValidacionError("DATO_INVALIDO", "un argumento no es texto UTF-8 válido") from None
 
 
 def ejecutar(a):
-    _validar_minimos(a)
+    _validar_rangos(a)
     if a.comando == "carga":
         from farmared import carga
         if not a.validar:
@@ -152,8 +167,10 @@ def _error_de_motor(e):
 
 
 def main(argv=None):
+    argv = sys.argv[1:] if argv is None else argv
     a = _parser().parse_args(argv)
     try:
+        _validar_utf8(argv)
         resultado = ejecutar(a)
     except FarmaRedError as e:
         print(f"Error [{e.codigo}]: {e.mensaje}", file=sys.stderr)

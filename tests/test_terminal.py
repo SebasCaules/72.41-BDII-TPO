@@ -195,6 +195,32 @@ def test_parametro_numerico_bajo_su_minimo_se_rechaza(monkeypatch, capsys, argum
     assert (salida.out, salida.err) == ("", f"Error [DATO_INVALIDO]: {mensaje}\n")
 
 
+@pytest.mark.parametrize("argumentos, mensaje", [
+    (["q05", "--dias", "36501"], "los días deben ser como máximo 36500: 36501"),
+    (["q05", "--dias", "99999999999"], "los días deben ser como máximo 36500: 99999999999"),
+    (["q07", "--limite", "2147483648"], "el límite debe ser como máximo 2147483647: 2147483648"),
+    (["q07", "--limite", "99999999999999999999"], "el límite debe ser como máximo 2147483647: 99999999999999999999"),
+    (["q08", "--umbral", "2147483648"], "el umbral debe ser como máximo 2147483647: 2147483648"),
+    (["q08", "--umbral", "99999999999999999999"], "el umbral debe ser como máximo 2147483647: 99999999999999999999"),
+    (["q09", "--monto", "2147483648"], "el monto debe ser como máximo 2147483647: 2147483648"),
+    (["q09", "--monto", "99999999999999999999"], "el monto debe ser como máximo 2147483647: 99999999999999999999"),
+])
+def test_parametro_numerico_sobre_su_maximo_se_rechaza(monkeypatch, capsys, argumentos, mensaje):
+    reemplazar(monkeypatch, argumentos[0], lanza(AssertionError("la consulta no debía correr")))
+    assert terminal.main(argumentos) == 1
+    salida = capsys.readouterr()
+    assert (salida.out, salida.err) == ("", f"Error [DATO_INVALIDO]: {mensaje}\n")
+
+
+@pytest.mark.parametrize("argumentos", [
+    ["q05", "--dias", "36500"], ["q07", "--limite", "2147483647"], ["q08", "--umbral", "2147483647"],
+    ["q09", "--monto", "2147483647"],
+])
+def test_parametro_numerico_en_su_maximo_corre_la_consulta(datos_provistos, capsys, argumentos):
+    assert terminal.main(argumentos) == 0
+    assert json.loads(capsys.readouterr().out)
+
+
 @pytest.mark.parametrize("argumentos, parametro", [
     (["q05", "--dias", "0"], {"dias": 0}),
     (["q07", "--limite", "1"], {"limite": 1}),
@@ -216,6 +242,21 @@ def test_cero_dias_cuenta_solo_las_ventas_de_hoy(datos_provistos, monkeypatch, c
     resultado = json.loads(capsys.readouterr().out)
     assert [(f["id_farmaceutico"], f["cantidad_ventas"]) for f in resultado] == [
         ("F003", 1), ("F001", 0), ("F002", 0), ("F005", 0), ("F006", 0), ("F007", 0)]
+
+
+# Argumentos que no son texto UTF-8
+
+@pytest.mark.parametrize("argumentos", [
+    ["q03", b"C\xff"],
+    ["q15", b"V\xff"],
+    ["q14", "--cliente", b"C\xff", "--farmaceutico", "F006", "--medio-pago", "Efectivo", "--item", "PRD001:1"],
+    ["q13", "baja", b"\xff"],
+], ids=["q03", "q15", "q14", "q13"])
+def test_argumento_que_no_es_utf8_se_rechaza_sin_traza(argumentos):
+    salida = subprocess.run([sys.executable, "-m", "farmared", *argumentos], cwd=RAIZ, capture_output=True,
+                            text=True, timeout=60)
+    assert (salida.returncode, salida.stdout) == (1, "")
+    assert salida.stderr == "Error [DATO_INVALIDO]: un argumento no es texto UTF-8 válido\n"
 
 
 # Ítems de q14

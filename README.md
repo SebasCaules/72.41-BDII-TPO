@@ -127,7 +127,7 @@ python -m farmared carga
 
 La salida es JSON con sangría de dos espacios y sin escapar caracteres no ASCII, por stdout. Los errores van por stderr:
 
-- Un error de validación o de negocio se informa como `Error [CODIGO]: mensaje` y el proceso sale con 1. Por ejemplo, `--limite`, `--umbral` y `--monto` tienen que ser al menos 1 y `--dias` no puede ser negativo: si no, el error es `DATO_INVALIDO`. Sobre una base sin cargar, q11 y el alta de q13 informan `BASE_SIN_CARGA`.
+- Un error de validación o de negocio se informa como `Error [CODIGO]: mensaje` y el proceso sale con 1. Por ejemplo, `--limite`, `--umbral` y `--monto` van de 1 a 2147483647 y `--dias` de 0 a 36500: fuera de esos valores, o con un argumento que no es texto UTF-8 válido, el error es `DATO_INVALIDO`. Sobre una base sin cargar, q11 y el alta de q13 informan `BASE_SIN_CARGA`.
 - Si un comando necesita MongoDB o Redis y ese motor no responde (detenido o colgado), lo informa después de esperarlo hasta 3 segundos, como `Error [CONEXION]: MongoDB no responde` o `Error [CONEXION]: Redis no responde`, y sale con 1. `carga` y `demo` comprueban los dos motores antes de escribir: si uno no responde, no tocan ninguno.
 - Cualquier otro error de un motor también se informa con un código y sale con 1: `CONFLICTO` cuando una escritura simultánea canceló la operación después de los reintentos (se puede volver a correr) y `MOTOR`, con el mensaje del motor, en los demás casos.
 - Un parámetro faltante o mal formado lo informa argparse con el uso del comando y sale con 2. Las opciones no se abrevian (`--lim` no reemplaza a `--limite`), y un `--item` que no tiene la forma `PRODUCTO:CANTIDAD` con la cantidad en dígitos también es un error de uso.
