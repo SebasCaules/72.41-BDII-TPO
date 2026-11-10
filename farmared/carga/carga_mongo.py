@@ -6,6 +6,7 @@ from bson.errors import InvalidDocument
 from pymongo import IndexModel
 
 from farmared import conexiones
+from farmared.consultas import q11_ingresos_mes_actual
 from farmared.errores import ValidacionError
 
 MAXIMO_BSON = 16 * 1024 * 1024   # el mayor documento que acepta MongoDB
@@ -76,4 +77,5 @@ def cargar_mongo(docs):
         if lista:   # insert_many no acepta una lista vacía
             db[col].insert_many(lista)
         conteos[col] = len(lista)
+    q11_ingresos_mes_actual.crear_vista()
     return conteos

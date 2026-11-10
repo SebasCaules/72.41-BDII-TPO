@@ -6,6 +6,7 @@ import sys
 
 import pytest
 
+from farmared import carga
 from farmared.consultas import q11_ingresos_mes_actual as q11
 
 RAIZ = pathlib.Path(__file__).resolve().parent.parent
@@ -79,21 +80,40 @@ def test_crea_la_vista_sobre_ventas(datos_provistos, db):
     assert vista["options"]["pipeline"] == q11.PIPELINE_VISTA
 
 
-def test_recrea_la_vista_con_la_definicion_del_codigo(datos_provistos, db):
+def test_la_carga_reemplaza_una_vista_ya_creada(datos_provistos, db):
     db.drop_collection("ingresos_mes_actual")
     db.create_collection("ingresos_mes_actual", viewOn="ventas", pipeline=[{"$match": {"estado": "Anulada"}}])
+    carga.cargar(solo_provistos=True)
     insertar_venta(db, "V901", "F001", dia_real(), "Completada", 7300)
-    assert q11.ingresos_mes_actual() == [farmaceutico(db, "F001", 1, 7300)]
     assert next(db.list_collections(filter={"name": "ingresos_mes_actual"}))["options"]["pipeline"] == \
         q11.PIPELINE_VISTA
     assert q11.ingresos_mes_actual() == [farmaceutico(db, "F001", 1, 7300)]
 
 
-@pytest.mark.skipif(datetime.date.today().strftime("%Y-%m") != "2026-11",
-                    reason="las ventas adicionales del mes actual son de noviembre de 2026")
-def test_datos_completos_en_noviembre_de_2026(datos_completos):
-    assert [(f["id_farmaceutico"], f["cantidad_ventas"], f["ingresos"]) for f in q11.ingresos_mes_actual()] == [
-        ("F008", 2, 9100), ("F010", 1, 6900), ("F009", 1, 5100)]
+def con_instante(nodo, instante):
+    if nodo == "$$NOW":
+        return instante
+    if isinstance(nodo, dict):
+        return {k: con_instante(v, instante) for k, v in nodo.items()}
+    if isinstance(nodo, list):
+        return [con_instante(v, instante) for v in nodo]
+    return nodo
+
+
+# La definición de la vista corrida sobre ventas con un instante fijo en lugar de $$NOW: vale en cualquier mes.
+@pytest.mark.parametrize("instante_utc,esperado", [
+    (datetime.datetime(2026, 11, 16, 15), [("F008", 2, 9100), ("F010", 1, 6900), ("F009", 1, 5100)]),
+    (datetime.datetime(2026, 11, 1, 3), [("F008", 2, 9100), ("F010", 1, 6900), ("F009", 1, 5100)]),
+    (datetime.datetime(2026, 12, 1, 2, 59, 59), [("F008", 2, 9100), ("F010", 1, 6900), ("F009", 1, 5100)]),
+    (datetime.datetime(2026, 12, 1, 3), []),
+    (datetime.datetime(2026, 11, 1, 2, 59, 59), [("F010", 1, 8400), ("F002", 1, 7800), ("F003", 1, 7100),
+                                                 ("F017", 1, 5000), ("F005", 1, 4600), ("F001", 1, 4400),
+                                                 ("F018", 1, 4200)]),
+])
+def test_datos_completos_con_el_mes_en_hora_argentina(datos_completos, db, instante_utc, esperado):
+    pipeline = con_instante(q11.PIPELINE_VISTA, instante_utc) + [{"$sort": {"ingresos": -1, "id_farmaceutico": 1}}]
+    assert [(f["id_farmaceutico"], f["cantidad_ventas"], f["ingresos"]) for f in db.ventas.aggregate(pipeline)] == \
+        esperado
 
 
 def test_resultado_serializable_en_json(datos_completos):
