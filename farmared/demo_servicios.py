@@ -1,5 +1,3 @@
-import sys
-
 from farmared import carga, claves, conexiones, fechas, formato, ids
 from farmared.consultas import q13_abm_clientes, q14_registrar_venta, q15_descontar_stock
 from farmared.demo import escribir, ordenar
@@ -156,10 +154,6 @@ def ejecutar(destino):
     carga.cargar()
     escritas = []
     for nombre, servicio in (("q13", _q13), ("q14", _q14), ("q15", _q15)):
-        try:
-            parametros, escenarios = servicio()
-        except NotImplementedError:
-            print(f"{nombre}: sin implementar", file=sys.stderr)
-            continue
+        parametros, escenarios = servicio()
         escritas.append(escribir(destino, nombre, parametros, escenarios))
     return escritas

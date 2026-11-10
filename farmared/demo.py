@@ -1,5 +1,4 @@
 import json
-import sys
 from pathlib import Path
 
 from farmared import carga, fechas
@@ -84,15 +83,7 @@ def ejecutar(destino):
     carga.cargar()
     escritas = []
     for nombre, modulo, funcion, parametros in CONSULTAS:
-        try:
-            resultado = getattr(modulo, funcion)(**parametros)
-        except NotImplementedError:
-            print(f"{nombre}: sin implementar", file=sys.stderr)
-            continue
+        resultado = getattr(modulo, funcion)(**parametros)
         claves, anidados = ORDEN[nombre]
         escritas.append(escribir(destino, nombre, parametros, [ordenar(e, claves, anidados) for e in resultado]))
-    try:
-        escritas += demo_servicios.ejecutar(destino)
-    except NotImplementedError:
-        print("demo_servicios: sin implementar", file=sys.stderr)
-    return escritas
+    return escritas + demo_servicios.ejecutar(destino)

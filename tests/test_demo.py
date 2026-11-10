@@ -175,25 +175,31 @@ def test_el_despues_de_un_rechazo_se_mide_otra_vez():
                          "error": {"codigo": "CODIGO", "mensaje": "mensaje"}}
 
 
-def test_un_stub_se_informa_y_la_demo_sigue(tmp_path, monkeypatch, capsys):
-    def stub(*args, **kwargs):
-        raise NotImplementedError
+@pytest.mark.parametrize("excepcion", [NotImplementedError, RuntimeError])
+def test_si_una_consulta_falla_la_demo_se_corta_sin_omitirla(tmp_path, monkeypatch, excepcion):
+    def falla(*args, **kwargs):
+        raise excepcion
 
-    monkeypatch.setattr(q01_productos_activos, "productos_activos_con_proveedor", stub)
-    monkeypatch.setattr(demo_servicios, "ejecutar", stub)
-    rutas = demo.ejecutar(tmp_path)
-    assert rutas == [str(tmp_path / f"{n}.json") for n in NOMBRES[1:12]]
-    assert capsys.readouterr().err.splitlines() == ["q01: sin implementar", "demo_servicios: sin implementar"]
+    monkeypatch.setattr(q01_productos_activos, "productos_activos_con_proveedor", falla)
+    with pytest.raises(excepcion):
+        demo.ejecutar(tmp_path)
+    assert list(tmp_path.iterdir()) == []
 
 
-def test_un_servicio_sin_implementar_no_corta_los_demas(datos_completos, tmp_path, monkeypatch, capsys):
-    def stub(*args, **kwargs):
-        raise NotImplementedError
+@pytest.mark.parametrize("excepcion", [NotImplementedError, RuntimeError])
+def test_si_un_servicio_falla_la_demo_se_corta_sin_omitirlo(datos_completos, tmp_path, monkeypatch, excepcion):
+    def falla(*args, **kwargs):
+        raise excepcion
 
+    monkeypatch.setattr(q13_abm_clientes, "alta_cliente", falla)
+    with pytest.raises(excepcion):
+        demo_servicios.ejecutar(tmp_path)
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_los_servicios_parten_de_los_datos_recargados(datos_completos, tmp_path):
     q14_registrar_venta.registrar_venta(**demo_servicios.VENTAS[0][1])
-    monkeypatch.setattr(q13_abm_clientes, "alta_cliente", stub)
-    assert demo_servicios.ejecutar(tmp_path) == [str(tmp_path / "q14.json"), str(tmp_path / "q15.json")]
-    assert capsys.readouterr().err.splitlines() == ["q13: sin implementar"]
+    assert demo_servicios.ejecutar(tmp_path) == [str(tmp_path / f"{n}.json") for n in ("q13", "q14", "q15")]
     exitosa = json.loads((tmp_path / "q14.json").read_text(encoding="utf-8"))["resultado"][0]
     assert exitosa["antes"]["contadores"] == {"detalle_ventas": 39, "ventas": 31}
     assert lotes(exitosa["antes"]) == {"L007": 22}
