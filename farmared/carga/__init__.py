@@ -1,3 +1,4 @@
+from farmared import conexiones
 from farmared.carga import carga_mongo, carga_redis, lector, validacion
 from farmared.errores import ValidacionError
 
@@ -24,11 +25,13 @@ def cargar(solo_provistos=False):
     Retorna:
         Diccionario con los conteos: {'mongo': {coleccion: n}, 'redis': {'lotes': n}}.
     Motor: MongoDB (colecciones e índices) y Redis (lotes y stock).
-    Errores: ValidacionError con todos los errores si los datos no son válidos.
+    Errores: ValidacionError con todos los errores si los datos no son válidos; pymongo.errors.ConnectionFailure o
+        redis.exceptions.ConnectionError/TimeoutError si un motor no responde. En los dos casos no escribe nada.
     """
     errores = validar(solo_provistos)
     if errores:
         raise ValidacionError("DATO_INVALIDO", "\n".join(errores))
     filas = lector.leer_todo(solo_provistos)
     docs, lotes = carga_mongo.documentos(filas), carga_redis.preparar(filas["stock_lotes"])
+    conexiones.comprobar()   # los dos motores responden antes de borrar nada
     return {"mongo": carga_mongo.cargar_mongo(docs), "redis": carga_redis.cargar_redis(lotes)}

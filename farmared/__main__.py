@@ -10,7 +10,6 @@ from redis.exceptions import ConnectionError as RedisConnectionError
 from redis.exceptions import RedisError
 from redis.exceptions import TimeoutError as RedisTimeoutError
 
-from farmared import conexiones
 from farmared.errores import FarmaRedError, ValidacionError
 
 RESULTADOS = Path(__file__).resolve().parents[1] / "docs" / "resultados"
@@ -50,9 +49,9 @@ COMANDOS = {
     "q15": "descuenta el stock de una venta registrada",
     "demo": "recarga los datos y escribe los resultados de ejemplo en docs/resultados/",
 }
-# Mismo criterio que el límite de q07: un parámetro numérico de una consulta es un entero positivo.
-POSITIVOS = {"dias": "los días deben", "limite": "el límite debe", "umbral": "el umbral debe",
-             "monto": "el monto debe"}
+# Valor mínimo de cada parámetro numérico. El del límite es el que ya valida q07; cero días es la ventana de hoy.
+MINIMOS = {"dias": (0, "los días deben"), "limite": (1, "el límite debe"), "umbral": (1, "el umbral debe"),
+           "monto": (1, "el monto debe")}
 ITEM = re.compile(r"(?P<id_producto>[^:]+):(?P<cantidad>[0-9]+)")
 
 
@@ -105,19 +104,18 @@ def _parser():
     return p
 
 
-def _validar_positivos(a):
-    for campo, sujeto in POSITIVOS.items():
+def _validar_minimos(a):
+    for campo, (minimo, sujeto) in MINIMOS.items():
         valor = getattr(a, campo, None)
-        if valor is not None and valor < 1:
-            raise ValidacionError("DATO_INVALIDO", f"{sujeto} ser al menos 1: {valor}")
+        if valor is not None and valor < minimo:
+            raise ValidacionError("DATO_INVALIDO", f"{sujeto} ser al menos {minimo}: {valor}")
 
 
 def ejecutar(a):
-    _validar_positivos(a)
+    _validar_minimos(a)
     if a.comando == "carga":
         from farmared import carga
         if not a.validar:
-            conexiones.comprobar()
             return carga.cargar(a.solo_provistos)
         errores = carga.validar(a.solo_provistos)
         if errores:
@@ -125,7 +123,6 @@ def ejecutar(a):
         return []
     if a.comando == "demo":
         from farmared import demo
-        conexiones.comprobar()
         return demo.ejecutar(RESULTADOS)
     if a.comando == "q13":
         from farmared.consultas import q13_abm_clientes as q13

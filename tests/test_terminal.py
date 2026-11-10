@@ -1,4 +1,6 @@
+import datetime
 import importlib
+import json
 import os
 import pathlib
 import socket
@@ -11,7 +13,7 @@ import redis
 from pymongo.errors import AutoReconnect, NetworkTimeout, OperationFailure, ServerSelectionTimeoutError
 
 import farmared.__main__ as terminal
-from farmared import conexiones
+from farmared import carga, conexiones, fechas
 
 RAIZ = pathlib.Path(__file__).resolve().parent.parent
 # Un motor que no responde se informa en unos 3 s; el margen cubre el arranque de Python y el cierre del cliente.
@@ -70,15 +72,36 @@ def test_motor_que_no_responde_da_error_de_conexion_sin_traza(puerto_mudo, motor
     assert demora < ESPERA_MAXIMA_S
 
 
+REDIS_QUE_NO_RESPONDE = pytest.mark.parametrize("redis_url", [
+    lambda puerto: f"redis://{PUERTO_CERRADO}",
+    lambda puerto: f"redis://{puerto}",
+], ids=["redis_detenido", "redis_congelado"])
+
+
+@REDIS_QUE_NO_RESPONDE
 @pytest.mark.parametrize("comando", ["carga", "demo"])
-def test_comando_que_recarga_no_toca_mongodb_si_redis_no_responde(db, comando):
+def test_comando_que_recarga_no_toca_mongodb_si_redis_no_responde(db, puerto_mudo, comando, redis_url):
     db.contadores.insert_one({"_id": MARCA, "ultimo": 0})
     try:
-        salida, _ = correr_cli(comando, REDIS_URL=f"redis://{PUERTO_CERRADO}")
+        salida, _ = correr_cli(comando, REDIS_URL=redis_url(puerto_mudo))
         assert salida.returncode == 1
         assert salida.stderr == "Error [CONEXION]: Redis no responde\n"
         assert db.contadores.count_documents({"_id": MARCA}) == 1
     finally:
+        db.contadores.delete_one({"_id": MARCA})
+
+
+@REDIS_QUE_NO_RESPONDE
+def test_cargar_sin_la_terminal_no_toca_mongodb_si_redis_no_responde(db, monkeypatch, puerto_mudo, redis_url):
+    db.contadores.insert_one({"_id": MARCA, "ultimo": 0})
+    monkeypatch.setenv("REDIS_URL", redis_url(puerto_mudo))
+    monkeypatch.setattr(conexiones, "_redis", None)   # el próximo cliente de Redis apunta a ese motor
+    try:
+        with pytest.raises((redis.exceptions.ConnectionError, redis.exceptions.TimeoutError)):
+            carga.cargar()
+        assert db.contadores.count_documents({"_id": MARCA}) == 1
+    finally:
+        conexiones.get_redis().close()
         db.contadores.delete_one({"_id": MARCA})
 
 
@@ -156,8 +179,8 @@ def test_la_terminal_no_tiene_una_salida_para_comandos_sin_implementar(monkeypat
 # Parámetros numéricos
 
 @pytest.mark.parametrize("argumentos, mensaje", [
-    (["q05", "--dias", "0"], "los días deben ser al menos 1: 0"),
-    (["q05", "--dias", "-5"], "los días deben ser al menos 1: -5"),
+    (["q05", "--dias", "-1"], "los días deben ser al menos 0: -1"),
+    (["q05", "--dias", "-5"], "los días deben ser al menos 0: -5"),
     (["q07", "--limite", "0"], "el límite debe ser al menos 1: 0"),
     (["q07", "--limite", "-1"], "el límite debe ser al menos 1: -1"),
     (["q08", "--umbral", "0"], "el umbral debe ser al menos 1: 0"),
@@ -165,7 +188,7 @@ def test_la_terminal_no_tiene_una_salida_para_comandos_sin_implementar(monkeypat
     (["q09", "--monto", "0"], "el monto debe ser al menos 1: 0"),
     (["q09", "--monto", "-1"], "el monto debe ser al menos 1: -1"),
 ])
-def test_parametro_numerico_menor_que_uno_se_rechaza_igual_en_las_cuatro(monkeypatch, capsys, argumentos, mensaje):
+def test_parametro_numerico_bajo_su_minimo_se_rechaza(monkeypatch, capsys, argumentos, mensaje):
     reemplazar(monkeypatch, argumentos[0], lanza(AssertionError("la consulta no debía correr")))
     assert terminal.main(argumentos) == 1
     salida = capsys.readouterr()
@@ -173,17 +196,26 @@ def test_parametro_numerico_menor_que_uno_se_rechaza_igual_en_las_cuatro(monkeyp
 
 
 @pytest.mark.parametrize("argumentos, parametro", [
-    (["q05", "--dias", "1"], {"dias": 1}),
+    (["q05", "--dias", "0"], {"dias": 0}),
     (["q07", "--limite", "1"], {"limite": 1}),
     (["q08", "--umbral", "1"], {"umbral": 1}),
     (["q09", "--monto", "1"], {"monto": 1}),
 ])
-def test_parametro_numerico_igual_a_uno_llega_a_la_consulta(monkeypatch, capsys, argumentos, parametro):
+def test_parametro_numerico_en_su_minimo_llega_a_la_consulta(monkeypatch, capsys, argumentos, parametro):
     recibidos = []
     reemplazar(monkeypatch, argumentos[0], lambda **kwargs: recibidos.append(kwargs) or [])
     assert terminal.main(argumentos) == 0
     assert recibidos == [parametro]
     assert capsys.readouterr().out == "[]\n"
+
+
+def test_cero_dias_cuenta_solo_las_ventas_de_hoy(datos_provistos, monkeypatch, capsys):
+    # V010 de F003 es del 2026-10-08 y es la única venta de ese día; V016 de F002 es del día anterior
+    monkeypatch.setattr(fechas, "hoy", lambda: datetime.date(2026, 10, 8))
+    assert terminal.main(["q05", "--dias", "0"]) == 0
+    resultado = json.loads(capsys.readouterr().out)
+    assert [(f["id_farmaceutico"], f["cantidad_ventas"]) for f in resultado] == [
+        ("F003", 1), ("F001", 0), ("F002", 0), ("F005", 0), ("F006", 0), ("F007", 0)]
 
 
 # Ítems de q14
