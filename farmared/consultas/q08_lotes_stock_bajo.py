@@ -1,4 +1,9 @@
 from farmared import claves, conexiones, fechas
+from farmared.errores import FarmaRedError
+
+
+def _no_coinciden(id_lote, detalle):
+    return FarmaRedError("DATOS_INCONSISTENTES", f"Redis y MongoDB no coinciden en el lote {id_lote}: {detalle}")
 
 
 def lotes_stock_bajo(umbral=50):
@@ -9,6 +14,8 @@ def lotes_stock_bajo(umbral=50):
     Retorna:
         Lista de lotes ordenada por unidades e id_lote.
     Motor: Redis (lotes por unidades) y MongoDB (nombres).
+    Errores: FarmaRedError DATOS_INCONSISTENTES si un lote no tiene su hash en Redis o apunta a un producto,
+        un proveedor o una sucursal que MongoDB no tiene.
     """
     r = conexiones.get_redis()
     ids_lote = r.zrange(claves.UNIDADES, "-inf", f"({umbral}", byscore=True)
@@ -16,6 +23,9 @@ def lotes_stock_bajo(umbral=50):
     for id_lote in ids_lote:
         pipe.hgetall(claves.lote(id_lote))
     lotes = pipe.execute()
+    for id_lote, l in zip(ids_lote, lotes):
+        if not l:
+            raise _no_coinciden(id_lote, f"está en {claves.UNIDADES} pero no existe {claves.lote(id_lote)}")
     db = conexiones.get_db()
     productos = {p["_id"]: p for p in db.productos.aggregate([
         {"$match": {"_id": {"$in": sorted({l["id_producto"] for l in lotes})}}},
@@ -27,10 +37,14 @@ def lotes_stock_bajo(umbral=50):
     hoy = fechas.hoy().isoformat()
     salida = []
     for id_lote, l in zip(ids_lote, lotes):
-        p = productos[l["id_producto"]]
+        p, s = productos.get(l["id_producto"]), sucursales.get(l["id_sucursal"])
+        if p is None:
+            raise _no_coinciden(id_lote, f"MongoDB no tiene el producto {l['id_producto']} o su proveedor")
+        if s is None:
+            raise _no_coinciden(id_lote, f"MongoDB no tiene la sucursal {l['id_sucursal']}")
         salida.append({"id_lote": id_lote, "nro_lote": l["nro_lote"], "unidades": int(l["unidades"]),
                        "vencimiento": l["vencimiento"], "vencido": l["vencimiento"] < hoy,
                        "id_producto": l["id_producto"], "producto": p["nombre"],
-                       "id_sucursal": l["id_sucursal"], "sucursal": sucursales[l["id_sucursal"]]["nombre"],
+                       "id_sucursal": l["id_sucursal"], "sucursal": s["nombre"],
                        "id_proveedor": p["id_proveedor"], "proveedor": p["proveedor"]})
     return sorted(salida, key=lambda x: (x["unidades"], x["id_lote"]))
