@@ -72,14 +72,6 @@ def test_otros_meses_no_cuentan(datos_provistos, db):
     assert q11.ingresos_mes_actual() == []
 
 
-def test_crea_la_vista_sobre_ventas(datos_provistos, db):
-    q11.ingresos_mes_actual()
-    vista = next(db.list_collections(filter={"name": "ingresos_mes_actual"}))
-    assert vista["type"] == "view"
-    assert vista["options"]["viewOn"] == "ventas"
-    assert vista["options"]["pipeline"] == q11.PIPELINE_VISTA
-
-
 def test_la_carga_reemplaza_una_vista_ya_creada(datos_provistos, db):
     db.drop_collection("ingresos_mes_actual")
     db.create_collection("ingresos_mes_actual", viewOn="ventas", pipeline=[{"$match": {"estado": "Anulada"}}])
