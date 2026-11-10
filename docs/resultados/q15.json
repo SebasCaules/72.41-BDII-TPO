@@ -1,5 +1,5 @@
 {
-  "generado": "2026-11-08",
+  "generado": "2026-11-10",
   "parametros": {
     "venta importada sin descuento": {
       "id_venta": "V034",
@@ -8,7 +8,7 @@
         "id_cliente": "C005",
         "id_farmaceutico": "F001",
         "id_receta": null,
-        "fecha": "2026-11-08",
+        "fecha": "2026-11-10",
         "tipo": "Venta libre",
         "medio_pago": "Efectivo",
         "total": 3500,

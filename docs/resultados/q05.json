@@ -1,5 +1,5 @@
 {
-  "generado": "2026-11-08",
+  "generado": "2026-11-10",
   "parametros": {
     "dias": 60
   },
@@ -29,20 +29,20 @@
       "cantidad_ventas": 3
     },
     {
-      "id_farmaceutico": "F001",
-      "nombre": "Mariana",
-      "apellido": "Quiroga",
-      "matricula": "MN-18041",
-      "id_sucursal": "S001",
-      "cantidad_ventas": 2
-    },
-    {
       "id_farmaceutico": "F002",
       "nombre": "Sebastián",
       "apellido": "Ledesma",
       "matricula": "MN-18078",
       "id_sucursal": "S001",
       "cantidad_ventas": 2
+    },
+    {
+      "id_farmaceutico": "F001",
+      "nombre": "Mariana",
+      "apellido": "Quiroga",
+      "matricula": "MN-18041",
+      "id_sucursal": "S001",
+      "cantidad_ventas": 1
     },
     {
       "id_farmaceutico": "F003",

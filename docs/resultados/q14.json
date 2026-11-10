@@ -1,5 +1,5 @@
 {
-  "generado": "2026-11-08",
+  "generado": "2026-11-10",
   "parametros": {
     "venta con receta de tratamiento prolongado (última dispensa)": {
       "id_cliente": "C003",
@@ -124,7 +124,7 @@
           "id_cliente": "C003",
           "id_farmaceutico": "F006",
           "id_receta": "RC002",
-          "fecha": "2026-11-08",
+          "fecha": "2026-11-10",
           "tipo": "Con receta",
           "medio_pago": "Obra social",
           "total": 6200,
@@ -153,7 +153,7 @@
           "id_cliente": "C003",
           "id_farmaceutico": "F006",
           "id_receta": "RC002",
-          "fecha": "2026-11-08",
+          "fecha": "2026-11-10",
           "tipo": "Con receta",
           "medio_pago": "Obra social",
           "total": 6200,
@@ -247,7 +247,7 @@
           "estado": "Vigente",
           "dispensas_autorizadas": 3,
           "dispensas_realizadas": 2,
-          "proxima_dispensa": "2026-12-08",
+          "proxima_dispensa": "2026-12-10",
           "medico": "Dr. Pablo Echeverría",
           "matricula_medico": "MP-41203",
           "fecha_emision": "2026-09-20"
@@ -275,7 +275,7 @@
           "id_cliente": "C006",
           "id_farmaceutico": "F001",
           "id_receta": "RC004",
-          "fecha": "2026-11-08",
+          "fecha": "2026-11-10",
           "tipo": "Con receta",
           "medio_pago": "Obra social",
           "total": 9800,
@@ -304,7 +304,7 @@
           "id_cliente": "C006",
           "id_farmaceutico": "F001",
           "id_receta": "RC004",
-          "fecha": "2026-11-08",
+          "fecha": "2026-11-10",
           "tipo": "Con receta",
           "medio_pago": "Obra social",
           "total": 9800,
@@ -330,7 +330,7 @@
           "id_receta": "RC004",
           "dispensas_realizadas": 2,
           "estado": "Vigente",
-          "proxima_dispensa": "2026-12-08"
+          "proxima_dispensa": "2026-12-10"
         },
         "consumos": [
           {
