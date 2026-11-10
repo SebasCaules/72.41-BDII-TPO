@@ -1,3 +1,5 @@
+from pymongo.errors import OperationFailure
+
 from farmared import conexiones, stock
 from farmared.dominio import validar_id
 from farmared.errores import NoEncontrado, ValidacionError
@@ -23,6 +25,10 @@ def _marcar(db, id_venta, consumos, session):
         raise ValidacionError("STOCK_YA_DESCONTADO", f"la venta {id_venta} ya descontó stock")
 
 
+def _marcada(db, id_venta):
+    return db.ventas.find_one({"_id": id_venta, "stock_descontado": True}) is not None
+
+
 def descontar_stock_venta(id_venta, session=None):
     """Descuenta el stock de una venta registrada, por FEFO y sin lotes vencidos.
 
@@ -35,7 +41,10 @@ def descontar_stock_venta(id_venta, session=None):
     Retorna:
         Diccionario con id_venta, id_sucursal y los consumos por lote.
     Motor: Redis (script Lua sobre los lotes) y MongoDB (marca de la venta).
-    Errores: NoEncontrado, ValidacionError (DATO_INVALIDO si el id no es texto), StockInsuficiente.
+    Errores: NoEncontrado, ValidacionError (DATO_INVALIDO si el id no es texto), StockInsuficiente. Un error de
+        conexión o una interrupción durante la marca se propagan sin reponer: la venta queda pendiente (stock
+        descontado, sin marcar y con su registro), salvo que la marca se aplique después. Una nueva llamada
+        completa la pendiente sin descontar otra vez.
     """
     validar_id("id_venta", id_venta)
     db = conexiones.get_db()
@@ -57,18 +66,25 @@ def descontar_stock_venta(id_venta, session=None):
             raise
     else:
         consumos = stock.descontar_fefo(id_sucursal, venta["items"], id_venta=id_venta)
+        # ante la duda no se repone: una venta pendiente la completa el reintento con el registro, y una marca
+        # aplicada con el stock repuesto no tiene salida. Una interrupción (Ctrl+C) o una relectura que falla se
+        # propagan sin reponer
         try:
             _marcar(db, id_venta, consumos, None)
         except ValidacionError:
-            # otra llamada marcó la venta con los consumos de este mismo registro: no hay nada que reponer
+            # otra llamada marcó la venta. Si nadie más recibió estos consumos (usos 1), la que marcó descontó por
+            # su cuenta, sin este registro: se repone
+            stock.reponer_venta(id_venta)
             raise
-        except BaseException as e:
-            # la marca pudo aplicarse aunque llegue un error, así que se relee antes de reponer. Si la relectura
-            # también falla, se propaga sin reponer: con el registro, el reintento completa la marca
-            if db.ventas.find_one({"_id": id_venta, "stock_descontado": True}) is None:
+        except OperationFailure:
+            # el servidor respondió que la marca falló. Se relee igual: un error de write concern llega con la
+            # marca aplicada
+            if not _marcada(db, id_venta):
                 stock.reponer_venta(id_venta)
                 raise
-            # quedó marcada: un error de la marca termina en éxito, una interrupción (Ctrl+C) se respeta
-            if not isinstance(e, Exception):
+        except Exception:
+            # un error sin respuesta del servidor (conexión, tiempo): la marca puede seguir en vuelo y aplicarse
+            # después, así que no se repone. Si ya se aplicó es un éxito; si no, la venta queda pendiente
+            if not _marcada(db, id_venta):
                 raise
     return {"id_venta": id_venta, "id_sucursal": id_sucursal, "consumos": consumos}

@@ -9,7 +9,7 @@ from pymongo.collection import Collection
 from pymongo.errors import AutoReconnect, OperationFailure
 
 import snapshots
-from farmared import claves, stock
+from farmared import claves, conexiones, stock
 from farmared.consultas import q15_descontar_stock as q15
 from farmared.errores import NoEncontrado, ValidacionError
 from test_q15 import RAIZ, correr_cli, insertar_venta, unidades
@@ -81,7 +81,7 @@ def test_si_fallan_la_marca_y_la_reposicion_el_reintento_no_descuenta_otra_vez(d
     with monkeypatch.context() as m:
         m.setattr(Collection, "update_one", marca_que_falla)
         m.setattr(stock, "reponer", reposicion_que_falla)
-        m.setattr(stock, "reponer_venta", reposicion_que_falla, raising=False)
+        m.setattr(stock, "reponer_venta", reposicion_que_falla)
         with pytest.raises(redis.ConnectionError):
             q15.descontar_stock_venta(id_venta)
     assert unidades(r, "L004") == 87
@@ -134,6 +134,39 @@ def test_si_no_puede_releer_la_venta_no_repone_y_el_reintento_completa(datos_pro
     assert venta(db, id_venta) == (True, TRES_DE_L004)
 
 
+@pytest.mark.parametrize("se_aplica_despues", [True, False], ids=["la-marca-se-aplica-despues", "no-se-aplica"])
+def test_un_error_de_conexion_al_marcar_no_repone_y_el_stock_se_descuenta_una_sola_vez(datos_provistos, db, r,
+                                                                                       monkeypatch, se_aplica_despues):
+    id_venta = insertar_venta(db, "C005", "F001", [("PRD002", 3)])
+    marcar = Collection.update_one
+    en_vuelo = []
+
+    def sin_respuesta(self, *args, **kwargs):
+        if self.name != "ventas":
+            return marcar(self, *args, **kwargs)
+        en_vuelo.append((self, args, kwargs))
+        raise AutoReconnect("sin respuesta al marcar la venta")
+
+    with monkeypatch.context() as m:
+        m.setattr(Collection, "update_one", sin_respuesta)
+        with pytest.raises(AutoReconnect):
+            q15.descontar_stock_venta(id_venta)
+    assert unidades(r, "L004") == 87
+    assert venta(db, id_venta) == (False, None)
+    assert registro(r, id_venta)["usos"] == "1"
+    if se_aplica_despues:
+        # el servidor termina la marca que seguía en vuelo
+        coleccion, args, kwargs = en_vuelo[0]
+        marcar(coleccion, *args, **kwargs)
+        with pytest.raises(ValidacionError) as e:
+            q15.descontar_stock_venta(id_venta)
+        assert e.value.codigo == "STOCK_YA_DESCONTADO"
+    else:
+        assert q15.descontar_stock_venta(id_venta)["consumos"] == TRES_DE_L004
+    assert unidades(r, "L004") == 87
+    assert venta(db, id_venta) == (True, TRES_DE_L004)
+
+
 def interrumpir_la_marca(monkeypatch, aplicarla):
     marcar = Collection.update_one
 
@@ -147,14 +180,20 @@ def interrumpir_la_marca(monkeypatch, aplicarla):
     monkeypatch.setattr(Collection, "update_one", interrumpir)
 
 
-def test_ctrl_c_antes_de_aplicar_la_marca_repone_y_se_propaga(datos_provistos, db, monkeypatch):
+def test_ctrl_c_antes_de_aplicar_la_marca_deja_la_venta_pendiente_y_el_reintento_la_completa(datos_provistos, db, r,
+                                                                                            monkeypatch):
     id_venta = insertar_venta(db, "C005", "F001", [("PRD002", 3)])
-    antes = snapshot()
     with monkeypatch.context() as m:
         interrumpir_la_marca(m, aplicarla=False)
         with pytest.raises(KeyboardInterrupt):
             q15.descontar_stock_venta(id_venta)
-    assert snapshot() == antes
+    # la marca pudo quedar en vuelo: no se repone
+    assert unidades(r, "L004") == 87
+    assert venta(db, id_venta) == (False, None)
+    assert registro(r, id_venta)["usos"] == "1"
+    assert q15.descontar_stock_venta(id_venta)["consumos"] == TRES_DE_L004
+    assert unidades(r, "L004") == 87
+    assert venta(db, id_venta) == (True, TRES_DE_L004)
 
 
 def test_ctrl_c_con_la_marca_aplicada_no_repone_y_se_propaga(datos_provistos, db, r, monkeypatch):
@@ -248,6 +287,31 @@ def test_la_que_falla_no_repone_si_otra_ya_recibio_los_consumos(datos_provistos,
     assert resultado_otra == [{"id_venta": id_venta, "id_sucursal": "S001", "consumos": UNA_DE_L004}]
     assert unidades(r, "L004") == 89
     assert venta(db, id_venta) == (True, UNA_DE_L004)
+
+
+def test_la_que_pierde_la_marca_frente_a_una_llamada_con_sesion_repone_su_descuento(datos_provistos, db, r,
+                                                                                    monkeypatch):
+    id_venta = insertar_venta(db, "C005", "F001", [("PRD002", 3)])
+    marcar = Collection.update_one
+    otra = {}
+
+    def adelantarse(self, *args, **kwargs):
+        if self.name == "ventas" and kwargs.get("session") is None and not otra:
+            # una llamada con sesión descuenta sin registro, marca la venta y confirma antes que esta
+            otra["en_curso"] = True
+            with conexiones.get_client().start_session() as s:
+                with s.start_transaction():
+                    otra["resultado"] = q15.descontar_stock_venta(id_venta, session=s)
+        return marcar(self, *args, **kwargs)
+
+    monkeypatch.setattr(Collection, "update_one", adelantarse)
+    with pytest.raises(ValidacionError) as e:
+        q15.descontar_stock_venta(id_venta)
+    assert e.value.codigo == "STOCK_YA_DESCONTADO"
+    assert otra["resultado"]["consumos"] == TRES_DE_L004
+    assert unidades(r, "L004") == 87
+    assert venta(db, id_venta) == (True, TRES_DE_L004)
+    assert registro(r, id_venta) == {}
 
 
 # El farmacéutico y la sucursal de la venta
