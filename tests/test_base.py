@@ -70,7 +70,6 @@ def claves_prueba(r):
     def limpiar():
         r.delete(lote, stock)
         r.zrem(claves.UNIDADES, ID_LOTE_PRUEBA)
-        r.srem(claves.LOTES, ID_LOTE_PRUEBA)
 
     limpiar()
     yield lote, stock
@@ -215,7 +214,6 @@ def test_claves_con_los_nombres_del_modelo():
     assert claves.lote("L005") == "lote:L005"
     assert claves.stock("S001", "PRD003") == "stock:S001:PRD003"
     assert claves.UNIDADES == "lotes:unidades"
-    assert claves.LOTES == "lotes"
     assert claves.PATRONES == ("lote:*", "stock:*", "descuento:*")
     assert claves.descuento("V017") == "descuento:V017"
 
@@ -383,27 +381,23 @@ def test_redis_snap_refleja_el_contenido(r, claves_prueba):
     r.hset(lote, "unidades", 5)
     r.zadd(stock, {ID_LOTE_PRUEBA: 20270101})
     r.zadd(claves.UNIDADES, {ID_LOTE_PRUEBA: 5})
-    r.sadd(claves.LOTES, ID_LOTE_PRUEBA)
     estado = snapshots.redis_snap()
     assert estado[lote] == {"unidades": "5"}
     assert estado[stock] == [(ID_LOTE_PRUEBA, 20270101.0)]
     assert (ID_LOTE_PRUEBA, 5.0) in estado[claves.UNIDADES]
-    assert ID_LOTE_PRUEBA in estado[claves.LOTES]
 
 
 @pytest.mark.parametrize("cambio", [
     lambda r, lote, stock: r.hset(lote, "unidades", 4),
     lambda r, lote, stock: r.zadd(stock, {ID_LOTE_PRUEBA: 20270102}),
     lambda r, lote, stock: r.zadd(claves.UNIDADES, {ID_LOTE_PRUEBA: 4}),
-    lambda r, lote, stock: r.srem(claves.LOTES, ID_LOTE_PRUEBA),
     lambda r, lote, stock: r.delete(lote),
-], ids=["hash", "zset_stock", "zset_unidades", "set", "clave_borrada"])
+], ids=["hash", "zset_stock", "zset_unidades", "clave_borrada"])
 def test_redis_snap_detecta_un_cambio(r, claves_prueba, cambio):
     lote, stock = claves_prueba
     r.hset(lote, "unidades", 5)
     r.zadd(stock, {ID_LOTE_PRUEBA: 20270101})
     r.zadd(claves.UNIDADES, {ID_LOTE_PRUEBA: 5})
-    r.sadd(claves.LOTES, ID_LOTE_PRUEBA)
     antes = snapshots.redis_snap()
     cambio(r, lote, stock)
     assert snapshots.redis_snap() != antes

@@ -1,5 +1,4 @@
 UNIDADES = "lotes:unidades"
-LOTES = "lotes"
 PATRONES = ("lote:*", "stock:*", "descuento:*")
 
 

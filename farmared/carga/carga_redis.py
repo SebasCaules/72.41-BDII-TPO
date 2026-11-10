@@ -30,12 +30,12 @@ def cargar_redis(preparados):
                 tanda = []
         if tanda:
             r.unlink(*tanda)
-    r.unlink(claves.UNIDADES, claves.LOTES)
+    # una carga anterior pudo dejar el SET "lotes" con los ids cargados, que ya no es parte del esquema
+    r.unlink(claves.UNIDADES, "lotes")
     p = r.pipeline(transaction=True)
     for id_lote, clave, mapping, stock, puntaje, unidades in preparados:
         p.hset(clave, mapping=mapping)
         p.zadd(stock, {id_lote: puntaje})
         p.zadd(claves.UNIDADES, {id_lote: unidades})
-        p.sadd(claves.LOTES, id_lote)
     p.execute()
     return {"lotes": len(preparados)}

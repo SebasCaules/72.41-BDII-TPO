@@ -120,6 +120,8 @@ def con_adicionales(copia):
 
 
 AJENAS = ("otra:clave", "lote", "lotes_viejos", "stockeo", "stock")
+# SET con los ids de los lotes que escribía una carga anterior; ya no es parte del esquema.
+SET_ANTERIOR = "lotes"
 
 
 @pytest.fixture
@@ -674,10 +676,11 @@ def test_ninguna_coleccion_guarda_stock(datos_provistos, db):
 
 def test_claves_de_redis(datos_provistos, r):
     estado = snapshots.redis_snap()
-    assert len(estado) == 37
+    assert len(estado) == 36
     assert sum(k.startswith("lote:") for k in estado) == 18
     assert sum(k.startswith("stock:") for k in estado) == 17
-    assert claves.LOTES in estado and claves.UNIDADES in estado
+    assert claves.UNIDADES in estado
+    assert not r.exists(SET_ANTERIOR)
     assert len(list(r.scan_iter(match="lote:*"))) == 18
     assert len(list(r.scan_iter(match="stock:*"))) == 17
 
@@ -688,7 +691,6 @@ def test_contenido_y_tipos_de_un_lote(datos_provistos, r):
                                       "unidades": "40", "vencimiento": "2026-11-30"}
     assert r.type("stock:S001:PRD003") == "zset"
     assert r.zrange("stock:S001:PRD003", 0, -1, withscores=True) == [("L005", 20261130.0), ("L015", 20270630.0)]
-    assert r.type(claves.LOTES) == "set"
     assert r.type(claves.UNIDADES) == "zset"
 
 
@@ -698,7 +700,7 @@ def test_zrange_en_orden_de_vencimiento(datos_provistos, r):
 
 def test_todos_los_lotes_iguales_al_csv(datos_provistos, r):
     lotes = crudas("stock_lotes")
-    assert r.smembers(claves.LOTES) == {l["id_lote"] for l in lotes}
+    assert {k.removeprefix("lote:") for k in r.scan_iter(match="lote:*")} == {l["id_lote"] for l in lotes}
     for l in lotes:
         assert r.hgetall(claves.lote(l["id_lote"])) == {k: v for k, v in l.items() if k != "id_lote"}
         puntaje = int(l["vencimiento"].replace("-", ""))
@@ -716,8 +718,8 @@ def test_lotes_unidades_con_las_unidades_como_score(datos_provistos, r):
 def test_clave_ajena_sobrevive(r, clave_ajena):
     carga.cargar(solo_provistos=True)
     assert [r.get(clave) for clave in clave_ajena] == ["valor"] * len(clave_ajena)
-    assert len(snapshots.redis_snap()) == 37
-    assert r.dbsize() == 37 + len(clave_ajena)
+    assert len(snapshots.redis_snap()) == 36
+    assert r.dbsize() == 36 + len(clave_ajena)
 
 
 def test_claves_viejas_del_esquema_se_borran(datos_provistos, r):
@@ -727,13 +729,13 @@ def test_claves_viejas_del_esquema_se_borran(datos_provistos, r):
         p.hset(f"lote:X{n}", "unidades", 1)
     p.execute()
     r.zadd("stock:S999:PRD999", {"X0": 20270101})
-    r.sadd(claves.LOTES, "X0")
+    r.sadd(SET_ANTERIOR, "X0")
     r.zadd(claves.UNIDADES, {"X0": 1})
     carga.cargar(solo_provistos=True)
     estado = snapshots.redis_snap()
-    assert len(estado) == 37
+    assert len(estado) == 36
     assert "lote:X0" not in estado and "stock:S999:PRD999" not in estado
-    assert "X0" not in estado[claves.LOTES]
+    assert not r.exists(SET_ANTERIOR)
     assert r.zscore(claves.UNIDADES, "X0") is None
 
 
@@ -896,7 +898,7 @@ def test_sin_filas_se_carga_vacio_y_los_contadores_quedan_en_cero(db, r, monkeyp
     assert {c: db[c].count_documents({}) for c in PK} == dict.fromkeys(PK, 0)
     assert list(db.contadores.find(sort=[("_id", 1)])) == [
         {"_id": "clientes", "ultimo": 0}, {"_id": "detalle_ventas", "ultimo": 0}, {"_id": "ventas", "ultimo": 0}]
-    assert not r.exists(claves.LOTES, claves.UNIDADES)
+    assert not r.exists(SET_ANTERIOR, claves.UNIDADES)
     assert ids.siguiente_id("clientes", "C") == "C001"
 
 
