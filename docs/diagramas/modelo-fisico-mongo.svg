@@ -143,7 +143,7 @@
   <rect class="vista" x="490" y="872" width="410" height="138" rx="6"/>
   <path class="vistacab" d="M 497 873 h 396 a 6 6 0 0 1 6 6 v 30 h -408 v -30 a 6 6 0 0 1 6 -6 z"/>
   <text class="vistatit" x="502" y="898">ingresos_mes_actual (vista)</text>
-  <text class="vtx" x="502" y="940">Vista sobre ventas que q11 recrea en cada uso:</text>
+  <text class="vtx" x="502" y="940">Vista sobre ventas que crea la carga y q11 lee:</text>
   <text class="vtx" x="502" y="966">ventas 'Completada' del mes actual ($$NOW),</text>
   <text class="vtx" x="502" y="992">agrupadas por farmacéutico con sus ingresos.</text>
 

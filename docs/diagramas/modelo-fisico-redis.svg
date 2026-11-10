@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="1112" viewBox="0 0 1320 1112">
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="1208" viewBox="0 0 1320 1208">
   <title>Modelo físico en Redis</title>
   <defs>
     <marker id="flecha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
@@ -31,7 +31,7 @@
     .op { font-size: 17px; font-weight: bold; fill: #1d2733; }
     .cmd { font-size: 17px; fill: #1d2733; }
   </style>
-  <rect class="fondo" x="0" y="0" width="1320" height="1112"/>
+  <rect class="fondo" x="0" y="0" width="1320" height="1208"/>
   <text class="titulo" x="20" y="42">Modelo físico en Redis</text>
   <text class="sub" x="20" y="72">Stock por lote, fuente de verdad. Redis standalone con persistencia AOF (appendfsync everysec).</text>
 
@@ -82,22 +82,26 @@
   <rect class="borde" x="20" y="100" width="600" height="332" rx="6"/>
   <rect class="borde" x="700" y="100" width="600" height="332" rx="6"/>
 
-  <!-- lotes -->
+  <!-- descuento:{id_venta} -->
   <rect class="caja" x="20" y="502" width="600" height="302" rx="6"/>
   <path class="cab" d="M 26 502 h 588 a 6 6 0 0 1 6 6 v 40 h -600 v -40 a 6 6 0 0 1 6 -6 z"/>
-  <text class="clave" x="36" y="533">lotes</text>
+  <text class="clave" x="36" y="533">descuento:{id_venta}</text>
   <rect class="tipo" x="516" y="512" width="88" height="26" rx="13"/>
-  <text class="tipotx" x="560" y="531" text-anchor="middle">SET</text>
-  <text class="desc" x="36" y="580">Conjunto con todos los id_lote cargados.</text>
-  <text class="desc" x="36" y="606">Lo escribe la carga junto con las demás claves.</text>
-  <text class="ej" x="36" y="640">Ejemplo</text>
-  <rect class="tabla" x="36" y="652" width="568" height="44" rx="4"/>
-  <text class="valor" x="52" y="680">L001, L002, L003, …</text>
-  <text class="nota" x="286" y="680">un miembro por lote cargado</text>
-  <text class="nota" x="36" y="726">La carga borra lote:* y stock:* con SCAN y UNLINK,</text>
+  <text class="tipotx" x="560" y="531" text-anchor="middle">HASH</text>
+  <text class="desc" x="36" y="580">Lo que descontó q15 llamada sola en cada venta.</text>
+  <text class="desc" x="36" y="606">Lo crea el script Lua en el mismo paso que descuenta.</text>
+  <text class="ej" x="36" y="640">Ejemplo tras la demo: descuento:V034</text>
+  <rect class="tabla" x="36" y="652" width="568" height="74" rx="4"/>
+  <text class="campo" x="52" y="680">consumos</text>
+  <text class="valor" x="166" y="680">[["L004",1]]</text>
+  <text class="nota" x="316" y="680">[id_lote, unidades] en orden FEFO</text>
+  <text class="campo" x="52" y="710">usos</text>
+  <text class="valor" x="166" y="710">1</text>
+  <text class="nota" x="316" y="710">llamadas que los recibieron</text>
+  <text class="nota" x="36" y="756">Si ya existe, el script no descuenta: suma 1 a usos y devuelve</text>
   <rect class="caja" x="700" y="502" width="600" height="302" rx="6"/>
   <path class="cab" d="M 706 502 h 588 a 6 6 0 0 1 6 6 v 40 h -600 v -40 a 6 6 0 0 1 6 -6 z"/>
-  <text class="nota" x="36" y="750">y lotes y lotes:unidades por nombre; nunca FLUSHDB.</text>
+  <text class="nota" x="36" y="780">los consumos guardados. Queda tras marcar la venta; q14 no lo usa.</text>
 
   <!-- lotes:unidades -->
   <text class="clave" x="716" y="533">lotes:unidades</text>
@@ -129,21 +133,28 @@
 
   <!-- Operaciones -->
   <text class="opstit" x="20" y="866">Quién usa cada clave</text>
-  <rect class="ops" x="20" y="880" width="1280" height="180" rx="6"/>
+  <rect class="ops" x="20" y="880" width="1280" height="252" rx="6"/>
   <line class="sep" x1="20" y1="916" x2="1300" y2="916"/>
   <line class="sep" x1="20" y1="952" x2="1300" y2="952"/>
   <line class="sep" x1="20" y1="988" x2="1300" y2="988"/>
   <line class="sep" x1="20" y1="1024" x2="1300" y2="1024"/>
-  <line class="sep" x1="400" y1="880" x2="400" y2="1060"/>
+  <line class="sep" x1="20" y1="1060" x2="1300" y2="1060"/>
+  <line class="sep" x1="20" y1="1096" x2="1300" y2="1096"/>
+  <line class="sep" x1="400" y1="880" x2="400" y2="1132"/>
   <text class="op" x="36" y="904">Descuento FEFO (script Lua, atómico)</text>
   <text class="cmd" x="416" y="904">ZRANGE stock:… BYSCORE desde hoy; HGET y HINCRBY lote:…; ZINCRBY lotes:unidades</text>
-  <text class="op" x="36" y="940">Producto de cada lote (stock.py)</text>
-  <text class="cmd" x="416" y="940">HGET lote:… id_producto en un pipeline, después del script; si falla, repone</text>
-  <text class="op" x="36" y="976">Reposición (compensación)</text>
-  <text class="cmd" x="416" y="976">MULTI con HINCRBY lote:… unidades y ZINCRBY lotes:unidades</text>
-  <text class="op" x="36" y="1012">Lotes con stock bajo (q08)</text>
-  <text class="cmd" x="416" y="1012">ZRANGE lotes:unidades -inf (50 BYSCORE; HGETALL de cada lote:…</text>
-  <text class="op" x="36" y="1048">Carga</text>
-  <text class="cmd" x="416" y="1048">SCAN y UNLINK por patrón; HSET, ZADD y SADD en un MULTI</text>
-  <text class="nota" x="20" y="1090">El script toca lote:… y lotes:unidades sin declararlas en KEYS: es válido en Redis standalone, no en Redis Cluster.</text>
+  <text class="op" x="36" y="940">Registro en q15 sola (mismo script)</text>
+  <text class="cmd" x="416" y="940">HGET descuento:…; si existe, HINCRBY usos y no descuenta; si no, HSET consumos y usos 1 al descontar</text>
+  <text class="op" x="36" y="976">Producto de cada lote (stock.py)</text>
+  <text class="cmd" x="416" y="976">HGET lote:… id_producto en un pipeline, después del script; si falla, repone</text>
+  <text class="op" x="36" y="1012">Reposición en q14 (compensación)</text>
+  <text class="cmd" x="416" y="1012">MULTI con HINCRBY lote:… unidades y ZINCRBY lotes:unidades</text>
+  <text class="op" x="36" y="1048">Reposición en q15 sola (script Lua)</text>
+  <text class="cmd" x="416" y="1048">si usos es 1: HINCRBY lote:…, ZINCRBY lotes:unidades y DEL descuento:…; si no, nada</text>
+  <text class="op" x="36" y="1084">Lotes con stock bajo (q08)</text>
+  <text class="cmd" x="416" y="1084">ZRANGE lotes:unidades -inf (50 BYSCORE; HGETALL de cada lote:…</text>
+  <text class="op" x="36" y="1120">Carga</text>
+  <text class="cmd" x="416" y="1120">SCAN y UNLINK por patrón; HSET y ZADD en un MULTI</text>
+  <text class="nota" x="20" y="1162">La carga borra lote:*, stock:* y descuento:* con SCAN y UNLINK, y lotes:unidades por nombre; nunca FLUSHDB.</text>
+  <text class="nota" x="20" y="1186">Los scripts tocan lote:… y lotes:unidades sin declararlas en KEYS: es válido en Redis standalone, no en Redis Cluster.</text>
 </svg>

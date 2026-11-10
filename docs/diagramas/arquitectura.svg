@@ -52,7 +52,7 @@
   <rect class="modulo" x="422" y="314" width="476" height="46" rx="5"/>
   <text class="mod" x="660" y="344" text-anchor="middle">q01 a q13: consultas y ABM de clientes</text>
   <rect class="modulo" x="422" y="370" width="476" height="46" rx="5"/>
-  <text class="mod" x="660" y="400" text-anchor="middle">q14 y q15: venta y stock (stock.py, script Lua)</text>
+  <text class="mod" x="660" y="400" text-anchor="middle">q14 y q15: venta y stock (stock.py, scripts Lua)</text>
 
   <!-- Archivos CSV -->
   <rect class="neutra" x="44" y="203.0" width="290" height="172" rx="6"/>
@@ -99,8 +99,8 @@
   <text class="tx" x="726" y="690">lote:{id_lote}, HASH</text>
   <text class="tx" x="726" y="717">stock:{id_sucursal}:{id_producto}, ZSET (FEFO)</text>
   <text class="tx" x="726" y="744">lotes:unidades, ZSET (stock bajo)</text>
-  <text class="tx" x="726" y="771">lotes, SET</text>
-  <text class="gr" x="726" y="806">Garantiza que el script Lua corre sin intercalarse</text>
+  <text class="tx" x="726" y="771">descuento:{id_venta}, HASH (registro de q15 sola)</text>
+  <text class="gr" x="726" y="806">Garantiza que cada script Lua corre sin intercalarse</text>
   <text class="tx" x="726" y="841">Consultas: q08, q14 y q15</text>
 
   <!-- Conexiones con los motores -->

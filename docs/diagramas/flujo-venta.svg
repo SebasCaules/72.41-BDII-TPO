@@ -115,17 +115,19 @@
   <text class="tx" x="640" y="1097" text-anchor="middle">stock.py lee el id_producto de cada lote</text>
   <text class="tx" x="640" y="1123" text-anchor="middle">(HGET en pipeline) y arma los consumos</text>
   <line class="punteada" x1="900" y1="1103" x2="980" y2="1103"/>
-  <rect class="nota" x="980" y="1068" width="320" height="70" rx="6"/>
-  <text class="ntx" x="1140" y="1098" text-anchor="middle">Si esta lectura falla, stock.py repone</text>
-  <text class="ntx" x="1140" y="1122" text-anchor="middle">el stock antes de propagar el error.</text>
+  <rect class="nota" x="980" y="1057" width="320" height="92" rx="6"/>
+  <text class="ntx" x="1140" y="1085" text-anchor="middle">Si esta lectura falla o se</text>
+  <text class="ntx" x="1140" y="1107" text-anchor="middle">interrumpe, stock.py repone el</text>
+  <text class="ntx" x="1140" y="1129" text-anchor="middle">stock antes de propagar el error.</text>
   <line class="flecha" x1="640" y1="1142" x2="640" y2="1166"/>
   <rect class="mongo" x="380" y="1168" width="520" height="78" rx="6"/>
   <text class="tx" x="640" y="1201" text-anchor="middle">Marca la venta: stock_descontado true</text>
   <text class="tx" x="640" y="1227" text-anchor="middle">y guarda los consumos</text>
   <line class="punteada" x1="900" y1="1207" x2="980" y2="1207"/>
-  <rect class="nota" x="980" y="1172" width="320" height="70" rx="6"/>
-  <text class="ntx" x="1140" y="1202" text-anchor="middle">Si esta marca falla, q15 repone</text>
-  <text class="ntx" x="1140" y="1226" text-anchor="middle">el stock antes de propagar el error.</text>
+  <rect class="nota" x="980" y="1161" width="320" height="92" rx="6"/>
+  <text class="ntx" x="1140" y="1189" text-anchor="middle">Si esta marca falla o se</text>
+  <text class="ntx" x="1140" y="1211" text-anchor="middle">interrumpe, q15 repone el stock</text>
+  <text class="ntx" x="1140" y="1233" text-anchor="middle">antes de propagar el error.</text>
   <line class="flecha" x1="640" y1="1246" x2="640" y2="1270"/>
   <rect class="mongo" x="380" y="1272" width="520" height="54" rx="6"/>
   <text class="tx" x="640" y="1306" text-anchor="middle">Commit de la transacción</text>
@@ -154,7 +156,7 @@
   <text class="txc" x="1165" y="1556" text-anchor="middle">(MULTI: HINCRBY, ZINCRBY)</text>
 
   <!-- Reintento -->
-  <rect class="reint" x="20" y="487" width="290" height="324" rx="6"/>
+  <rect class="reint" x="20" y="487" width="290" height="412" rx="6"/>
   <path class="reintcab" d="M 26 487 h 278 a 6 6 0 0 1 6 6 v 34 h -290 v -34 a 6 6 0 0 1 6 -6 z"/>
   <text class="rtit" x="36" y="515">Reintento</text>
   <text class="rtx" x="36" y="557">Si MongoDB aborta con la etiqueta</text>
@@ -163,14 +165,18 @@
   <text class="rtx" x="36" y="623">en la receta), se espera un</text>
   <text class="rtx" x="36" y="645">tiempo aleatorio y se repite</text>
   <text class="rtx" x="36" y="667">todo, hasta 5 intentos.</text>
-  <text class="rtx" x="36" y="697">Es seguro: la transacción ya</text>
-  <text class="rtx" x="36" y="719">se abortó y el stock ya se</text>
-  <text class="rtx" x="36" y="741">repuso.</text>
-  <text class="rtx" x="36" y="771">Cualquier otro error llega</text>
-  <text class="rtx" x="36" y="793">al llamador.</text>
+  <text class="rtx" x="36" y="697">Es seguro: la transacción ya se</text>
+  <text class="rtx" x="36" y="719">abortó. El choque típico ocurre</text>
+  <text class="rtx" x="36" y="741">antes del script y no hay nada</text>
+  <text class="rtx" x="36" y="763">que reponer; si el script ya</text>
+  <text class="rtx" x="36" y="785">había descontado, el stock ya</text>
+  <text class="rtx" x="36" y="807">se repuso.</text>
+  <text class="rtx" x="36" y="837">Si no hay servidor de MongoDB,</text>
+  <text class="rtx" x="36" y="859">no se reintenta. Cualquier otro</text>
+  <text class="rtx" x="36" y="881">error llega al llamador.</text>
   <line class="error" x1="380" y1="557" x2="312" y2="557"/>
   <text class="ramae" x="345" y="547" text-anchor="middle">error</text>
-  <path class="error" d="M 1165 1573 V 1617 H 165 V 813"/>
+  <path class="error" d="M 1165 1573 V 1617 H 165 V 901"/>
   <text class="ramae" x="640" y="1605" text-anchor="middle">el error sigue hacia el reintento</text>
   <path class="error" d="M 165 487 V 139 H 378"/>
   <text class="ramae" x="177" y="313">nuevo intento</text>
