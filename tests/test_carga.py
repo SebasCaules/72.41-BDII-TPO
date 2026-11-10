@@ -119,8 +119,9 @@ def con_adicionales(copia):
     return copia
 
 
-AJENAS = ("otra:clave", "lote", "lotes_viejos", "stockeo", "stock")
-# SET con los ids de los lotes que escribía una carga anterior; ya no es parte del esquema.
+AJENAS = ("otra:clave", "lote", "lotes", "lotes_viejos", "stockeo", "stock")
+# SET con los ids de los lotes que escribía una carga anterior; ya no es parte del esquema: la carga no lo escribe
+# ni lo borra.
 SET_ANTERIOR = "lotes"
 
 
@@ -729,13 +730,11 @@ def test_claves_viejas_del_esquema_se_borran(datos_provistos, r):
         p.hset(f"lote:X{n}", "unidades", 1)
     p.execute()
     r.zadd("stock:S999:PRD999", {"X0": 20270101})
-    r.sadd(SET_ANTERIOR, "X0")
     r.zadd(claves.UNIDADES, {"X0": 1})
     carga.cargar(solo_provistos=True)
     estado = snapshots.redis_snap()
     assert len(estado) == 36
     assert "lote:X0" not in estado and "stock:S999:PRD999" not in estado
-    assert not r.exists(SET_ANTERIOR)
     assert r.zscore(claves.UNIDADES, "X0") is None
 
 
