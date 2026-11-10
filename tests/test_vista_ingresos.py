@@ -75,11 +75,12 @@ def test_sin_la_vista_informa_que_falta_la_carga(datos_provistos, db):
     db.drop_collection("ingresos_mes_actual")
     with pytest.raises(FarmaRedError) as error:
         q11.ingresos_mes_actual()
-    assert error.value.codigo == "BASE_SIN_CARGA"
+    mensaje = "falta la vista ingresos_mes_actual: hay que correr python -m farmared carga"
+    assert (error.value.codigo, error.value.mensaje) == ("BASE_SIN_CARGA", mensaje)
     assert definicion(db) is None
     salida = correr_cli("q11")
     assert (salida.returncode, salida.stdout) == (1, "")
-    assert salida.stderr.startswith("Error [BASE_SIN_CARGA]: "), salida.stderr
+    assert salida.stderr == f"Error [BASE_SIN_CARGA]: {mensaje}\n"
 
 
 def test_con_la_base_vacia_informa_que_falta_la_carga(db):

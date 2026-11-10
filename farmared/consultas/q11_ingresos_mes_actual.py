@@ -43,5 +43,5 @@ def ingresos_mes_actual():
     """
     db = conexiones.get_db()
     if not db.list_collection_names(filter={"name": VISTA}):
-        raise FarmaRedError("BASE_SIN_CARGA", f"falta la vista {VISTA}: correr la carga")
+        raise FarmaRedError("BASE_SIN_CARGA", f"falta la vista {VISTA}: hay que correr python -m farmared carga")
     return formato.a_json(list(db[VISTA].find({}, sort=[("ingresos", -1), ("id_farmaceutico", 1)])))
