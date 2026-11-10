@@ -2,7 +2,7 @@ import datetime
 import random
 import time
 
-from pymongo.errors import PyMongoError
+from pymongo.errors import PyMongoError, ServerSelectionTimeoutError
 
 from farmared import conexiones, fechas, formato, ids, stock
 from farmared.consultas.q15_descontar_stock import descontar_stock_venta
@@ -103,10 +103,10 @@ def _registrar(id_cliente, id_farmaceutico, items, medio_pago, id_receta):
                 db.ventas.insert_one(venta, session=s)
                 receta_final = _dispensar(db, s, receta, hoy) if receta is not None else None
                 consumos = descontar_stock_venta(id_venta, session=s)["consumos"]
-        except Exception as e:
+        except BaseException as e:
             if consumos is None:
                 raise
-            # el Lua ya descontó y el commit falló, salvo que se haya aplicado sin confirmación
+            # el Lua ya descontó y el commit falló o se interrumpió, salvo que se haya aplicado sin confirmación
             desconocido = isinstance(e, PyMongoError) and e.has_error_label("UnknownTransactionCommitResult")
             if not (desconocido and _venta_confirmada(db, id_venta)):
                 stock.reponer(consumos)
@@ -133,7 +133,9 @@ def registrar_venta(id_cliente, id_farmaceutico, items, medio_pago, id_receta=No
         try:
             return _registrar(id_cliente, id_farmaceutico, items, medio_pago, id_receta)
         except PyMongoError as e:
-            # dos ventas a la vez chocan en contadores; la transacción ya se abortó y el stock se repuso
-            if not e.has_error_label("TransientTransactionError") or intento == INTENTOS - 1:
+            # dos ventas a la vez chocan en contadores; la transacción ya se abortó y el stock se repuso.
+            # Si MongoDB no responde, reintentar solo multiplica la espera
+            if (isinstance(e, ServerSelectionTimeoutError) or not e.has_error_label("TransientTransactionError")
+                    or intento == INTENTOS - 1):
                 raise
             time.sleep(random.uniform(0.015, 0.15) * (intento + 1))
