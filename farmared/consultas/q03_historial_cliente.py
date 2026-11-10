@@ -1,4 +1,5 @@
 from farmared import conexiones, formato
+from farmared.dominio import validar_id
 from farmared.errores import NoEncontrado
 
 
@@ -25,8 +26,9 @@ def historial_cliente(id_cliente):
     Retorna:
         Lista de registros ('venta' o 'receta') ordenada por fecha.
     Motor: MongoDB (aggregate sobre ventas con $unionWith de recetas).
-    Errores: NoEncontrado si el cliente no existe.
+    Errores: NoEncontrado si el cliente no existe; ValidacionError con DATO_INVALIDO si el id no es texto.
     """
+    validar_id("id_cliente", id_cliente)
     db = conexiones.get_db()
     if db.clientes.find_one({"_id": id_cliente}, {"_id": 1}) is None:
         raise NoEncontrado("CLIENTE_INEXISTENTE", f"no existe el cliente {id_cliente}")

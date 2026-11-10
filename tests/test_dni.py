@@ -10,6 +10,7 @@ import snapshots
 from farmared import carga
 from farmared.carga import lector
 from farmared.consultas import q13_abm_clientes as q13
+from farmared.dominio import normalizar_dni
 from farmared.errores import FarmaRedError, ValidacionError
 
 RAIZ = pathlib.Path(__file__).resolve().parent.parent
@@ -55,12 +56,12 @@ def correr_cli(*argumentos):
     (" 31245678 ", "31245678"), ("1.234.567", "1234567"), ("7", "7"), ("00000007", "7"), ("99999999", "99999999"),
 ])
 def test_normalizar_deja_solo_el_numero(texto, numero):
-    assert q13.normalizar_dni(texto) == numero
+    assert normalizar_dni(texto) == numero
 
 
 @pytest.mark.parametrize("texto", NO_SON_DNI + ["", "   "])
 def test_normalizar_rechaza_lo_que_no_es_un_numero_de_documento(texto):
-    assert q13.normalizar_dni(texto) is None
+    assert normalizar_dni(texto) is None
 
 
 # Alta
@@ -137,5 +138,5 @@ def test_los_dni_de_los_datos_ya_estan_normalizados():
     for carpeta in ("provistos", "adicionales"):
         with open(lector.DATOS / carpeta / "clientes.csv", newline="", encoding="utf-8-sig") as f:
             crudos = [fila["dni"] for fila in csv.DictReader(f)]
-        assert crudos and all(q13.normalizar_dni(dni) == dni for dni in crudos), carpeta
+        assert crudos and all(normalizar_dni(dni) == dni for dni in crudos), carpeta
     assert len(lector.leer_todo()["clientes"]) == 22

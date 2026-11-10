@@ -1,4 +1,5 @@
 from farmared import conexiones, stock
+from farmared.dominio import validar_id
 from farmared.errores import NoEncontrado, ValidacionError
 
 
@@ -34,8 +35,9 @@ def descontar_stock_venta(id_venta, session=None):
     Retorna:
         Diccionario con id_venta, id_sucursal y los consumos por lote.
     Motor: Redis (script Lua sobre los lotes) y MongoDB (marca de la venta).
-    Errores: NoEncontrado, ValidacionError, StockInsuficiente.
+    Errores: NoEncontrado, ValidacionError (DATO_INVALIDO si el id no es texto), StockInsuficiente.
     """
+    validar_id("id_venta", id_venta)
     db = conexiones.get_db()
     venta = db.ventas.find_one({"_id": id_venta}, session=session)
     if venta is None:

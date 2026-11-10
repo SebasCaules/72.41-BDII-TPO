@@ -6,7 +6,7 @@ from pymongo.errors import PyMongoError, ServerSelectionTimeoutError
 
 from farmared import conexiones, fechas, formato, ids, stock
 from farmared.consultas.q15_descontar_stock import descontar_stock_venta
-from farmared.dominio import CONDICIONES_CON_RECETA, MEDIOS_DE_PAGO
+from farmared.dominio import CONDICIONES_CON_RECETA, MEDIOS_DE_PAGO, validar_id
 from farmared.errores import NoEncontrado, ValidacionError
 
 INTENTOS = 5
@@ -18,6 +18,11 @@ def _validar(db, s, id_cliente, id_farmaceutico, items, medio_pago, id_receta):
     for it in items:
         if type(it.get("cantidad")) is not int or not 0 < it["cantidad"] < 2**31:
             raise ValidacionError("CANTIDAD_INVALIDA", f"cantidad inválida para {it.get('id_producto')}")
+        validar_id("id_producto", it.get("id_producto"))
+    validar_id("id_cliente", id_cliente)
+    validar_id("id_farmaceutico", id_farmaceutico)
+    if id_receta is not None:
+        validar_id("id_receta", id_receta)
     cliente = db.clientes.find_one({"_id": id_cliente}, session=s)
     if cliente is None:
         raise NoEncontrado("CLIENTE_INEXISTENTE", f"no existe el cliente {id_cliente}")
@@ -127,7 +132,7 @@ def registrar_venta(id_cliente, id_farmaceutico, items, medio_pago, id_receta=No
     Retorna:
         Diccionario con la venta, la receta actualizada (o None) y los consumos.
     Motor: MongoDB (transacción) y Redis (stock).
-    Errores: NoEncontrado, ValidacionError, StockInsuficiente.
+    Errores: NoEncontrado, ValidacionError (DATO_INVALIDO si un id no es texto), StockInsuficiente.
     """
     for intento in range(INTENTOS):
         try:

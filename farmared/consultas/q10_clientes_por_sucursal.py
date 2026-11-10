@@ -1,4 +1,5 @@
 from farmared import conexiones, formato
+from farmared.dominio import validar_id
 from farmared.errores import NoEncontrado
 
 
@@ -23,8 +24,9 @@ def clientes_por_sucursal(id_sucursal):
     Retorna:
         Lista con id_cliente, nombre, apellido, dni, activo y cantidad_ventas, ordenada por id_cliente.
     Motor: MongoDB (aggregate sobre farmaceuticos con $lookup de ventas y clientes).
-    Errores: NoEncontrado si la sucursal no existe.
+    Errores: NoEncontrado si la sucursal no existe; ValidacionError con DATO_INVALIDO si el id no es texto.
     """
+    validar_id("id_sucursal", id_sucursal)
     db = conexiones.get_db()
     if db.sucursales.find_one({"_id": id_sucursal}, {"_id": 1}) is None:
         raise NoEncontrado("SUCURSAL_INEXISTENTE", f"no existe la sucursal {id_sucursal}")

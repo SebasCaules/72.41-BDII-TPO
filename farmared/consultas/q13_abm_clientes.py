@@ -1,39 +1,17 @@
 import random
-import re
 import time
 
 from pymongo import ReturnDocument
 from pymongo.errors import DuplicateKeyError, PyMongoError, ServerSelectionTimeoutError
 
 from farmared import conexiones, formato, ids
-from farmared.dominio import OBRAS_SOCIALES
+from farmared.dominio import OBRAS_SOCIALES, normalizar_dni, validar_id
 from farmared.errores import NoEncontrado, ValidacionError
 
 OBLIGATORIOS = ("nombre", "apellido", "dni", "email", "telefono", "ciudad", "provincia", "obra_social")
 MODIFICABLES = ("email", "telefono", "ciudad", "provincia", "obra_social", "nro_afiliado")
 SIN_COBERTURA = "Sin cobertura"
 INTENTOS = 5
-# Solo dígitos ASCII, o con puntos de miles (31.245.678); un DNI argentino tiene hasta 8 cifras.
-FORMATO_DNI = re.compile(r"[0-9]+|[0-9]{1,3}(?:\.[0-9]{3})+")
-CIFRAS_DNI = 8
-
-
-def normalizar_dni(texto):
-    """Lleva un DNI a su número: solo dígitos y sin ceros a la izquierda.
-
-    Parámetros:
-        texto: el DNI como se escribió, con o sin puntos de miles y con espacios en los extremos.
-    Retorna:
-        El número como texto ("31.245.678", "031245678" y " 31245678 " dan "31245678"), o None si no es un
-        número de documento de 1 a 8 cifras. El alta y la carga lo usan para comparar y para guardar.
-    Motor: ninguno.
-    Errores: ninguno.
-    """
-    texto = texto.strip()
-    if not FORMATO_DNI.fullmatch(texto):
-        return None
-    numero = texto.replace(".", "").lstrip("0")
-    return numero if 0 < len(numero) <= CIFRAS_DNI else None
 
 
 def _texto(campo, valor):
@@ -138,9 +116,10 @@ def modificar_cliente(id_cliente, cambios):
     Retorna:
         El cliente modificado, con id_cliente y sus campos.
     Motor: MongoDB (clientes).
-    Errores: NoEncontrado si el cliente no existe; ValidacionError con DATO_INVALIDO, CAMPO_NO_MODIFICABLE,
-        OBRA_SOCIAL_INVALIDA, AFILIADO_REQUERIDO o CLIENTE_INACTIVO.
+    Errores: NoEncontrado si el cliente no existe; ValidacionError con DATO_INVALIDO (también un id que no es
+        texto), CAMPO_NO_MODIFICABLE, OBRA_SOCIAL_INVALIDA, AFILIADO_REQUERIDO o CLIENTE_INACTIVO.
     """
+    validar_id("id_cliente", id_cliente)
     if not isinstance(cambios, dict) or not cambios:
         raise ValidacionError("DATO_INVALIDO", "no se indicó ningún cambio")
     ajenos = [c for c in cambios if c not in MODIFICABLES]
@@ -172,8 +151,10 @@ def baja_cliente(id_cliente):
     Retorna:
         El cliente resultante, con id_cliente y sus campos.
     Motor: MongoDB (clientes).
-    Errores: NoEncontrado si el cliente no existe.
+    Errores: NoEncontrado si el cliente no existe; ValidacionError con DATO_INVALIDO si el id no es texto.
     """
+    validar_id("id_cliente", id_cliente)
+
     def desactivar(db, s):
         actual = db.clientes.find_one({"_id": id_cliente}, session=s)
         if actual is None:

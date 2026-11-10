@@ -4,7 +4,7 @@ import io
 import re
 from pathlib import Path
 
-from farmared.consultas.q13_abm_clientes import normalizar_dni
+from farmared.dominio import normalizar_dni
 from farmared.errores import ValidacionError
 
 DATOS = Path(__file__).resolve().parents[2] / "datos"
