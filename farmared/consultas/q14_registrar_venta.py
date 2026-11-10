@@ -111,10 +111,16 @@ def _registrar(id_cliente, id_farmaceutico, items, medio_pago, id_receta):
         except BaseException as e:
             if consumos is None:
                 raise
-            # el Lua ya descontó y el commit falló o se interrumpió, salvo que se haya aplicado sin confirmación
+            # el Lua ya descontó y solo faltaba el commit. Si el commit dio un resultado desconocido o lo cortó una
+            # interrupción (Ctrl+C), pudo aplicarse igual: se relee la venta y solo se repone si no quedó. Si la
+            # relectura falla, se propaga sin reponer
             desconocido = isinstance(e, PyMongoError) and e.has_error_label("UnknownTransactionCommitResult")
-            if not (desconocido and _venta_confirmada(db, id_venta)):
+            incierto = desconocido or not isinstance(e, Exception)
+            if not (incierto and _venta_confirmada(db, id_venta)):
                 stock.reponer(consumos)
+                raise
+            # la venta quedó con su descuento: un resultado desconocido termina en éxito, la interrupción se respeta
+            if not desconocido:
                 raise
     venta.update(stock_descontado=True, consumos=consumos)
     return formato.a_json({"venta": {"id_venta": id_venta, **venta}, "receta": receta_final,
