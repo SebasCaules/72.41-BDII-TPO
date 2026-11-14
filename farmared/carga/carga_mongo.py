@@ -70,10 +70,13 @@ def cargar_mongo(docs):
     db = conexiones.get_db()
     conteos = {}
     for col, lista in docs.items():
-        db.drop_collection(col)
+        # Vaciamos la colección en lugar de borrarla: cada colección o índice que se descarta deja una tabla del
+        # motor abierta en MongoDB, y con muchas cargas seguidas (los tests hacen una por caso) su memoria crece.
+        db[col].delete_many({})
         modelos = [IndexModel(k, **o) for k, o in INDICES.get(col, [])]
-        if modelos:
-            db[col].create_indexes(modelos)
+        esperados = {"_id_", *(db[col].create_indexes(modelos) if modelos else [])}
+        for sobrante in set(db[col].index_information()) - esperados:
+            db[col].drop_index(sobrante)
         if lista:   # insert_many no acepta una lista vacía
             db[col].insert_many(lista)
         conteos[col] = len(lista)

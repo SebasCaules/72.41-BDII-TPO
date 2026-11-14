@@ -42,7 +42,7 @@ python -m farmared carga [--solo-provistos] [--validar]
 
 Con los datos completos, `python -m farmared carga` imprime los documentos cargados por colección (22 clientes, 15 sucursales, 18 farmacéuticos, 15 proveedores, 23 productos, 19 recetas, 31 ventas y 3 contadores) y los 38 lotes de Redis. Con `--solo-provistos` quedan 8 clientes, 5 sucursales, 7 farmacéuticos, 5 proveedores, 13 productos, 9 recetas, 16 ventas y 3 contadores, y 18 lotes. Además, cada carga borra y vuelve a crear la vista `ingresos_mes_actual` de q11, que no figura en esos conteos.
 
-La carga es destructiva e idempotente: borramos y recreamos las colecciones, los índices y los contadores de MongoDB, y en Redis borramos por prefijo las claves del esquema (nunca vaciamos la base). Volver a cargar borra lo creado por q13 y q14 y revierte los descuentos de stock de q15: la carga reinicia el entorno de prueba y no es una operación del sistema. La regla de bajas lógicas rige para los servicios, no para la carga.
+La carga es destructiva e idempotente: en MongoDB vaciamos las colecciones, volvemos a cargar los documentos y los contadores y dejamos exactamente los índices del modelo, y en Redis borramos por prefijo las claves del esquema (nunca vaciamos la base). Volver a cargar borra lo creado por q13 y q14 y revierte los descuentos de stock de q15: la carga reinicia el entorno de prueba y no es una operación del sistema. La regla de bajas lógicas rige para los servicios, no para la carga.
 
 Los registros propios de `datos/adicionales/` y el caso que ejercita cada uno están descritos en `datos/adicionales/CASOS.md`.
 
